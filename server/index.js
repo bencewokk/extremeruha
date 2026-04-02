@@ -16,6 +16,8 @@ app.use(express.json())
 // ensure uploads folder
 const uploadsDir = path.join(process.cwd(), 'server', 'public', 'uploads')
 const seedDataPath = path.join(process.cwd(), 'server', 'seed-data.json')
+const distDir = path.join(process.cwd(), 'dist')
+const distIndexPath = path.join(distDir, 'index.html')
 import fs from 'fs'
 fs.mkdirSync(uploadsDir, { recursive: true })
 
@@ -141,6 +143,18 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
   res.json({ url })
 })
+
+if (fs.existsSync(distIndexPath)) {
+  app.use(express.static(distDir))
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next()
+    }
+
+    res.sendFile(distIndexPath)
+  })
+}
 
 const port = process.env.PORT || 4000
 app.listen(port, () => console.log(`Server running on ${port}`))
