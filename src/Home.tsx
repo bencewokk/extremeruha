@@ -69,6 +69,7 @@ export default function Home() {
             <div className="hidden md:flex gap-6 text-gray-600">
               <a className="hover:text-rose-deep" href="#collection">Collection</a>
               <a className="hover:text-rose-deep" href="#booking">Book</a>
+              <a className="hover:text-rose-deep" href="#visit">Visit Us</a>
               <a className="hover:text-rose-deep" href="#contact">Contact</a>
               <a className="hover:text-rose-deep" href="/admin">Admin</a>
             </div>
@@ -150,6 +151,42 @@ export default function Home() {
               <button type="submit" className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold">Request Appointment</button>
             </div>
           </form>
+        </div>
+      </section>
+
+      {/* Visit Us */}
+      <section id="visit" className="mx-auto max-w-6xl px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <div className="rounded-2xl bg-white border border-rose-deep/10 p-6 shadow-sm">
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Visit Extreme Ruhaszalon</h3>
+            <p className="text-gray-600 mb-5">
+              Our boutique is in the city center with private fitting rooms and one-on-one bridal styling.
+            </p>
+
+            <div className="space-y-3 text-gray-700">
+              <p><span className="font-semibold text-rose-deep">Business:</span> Extreme Ruhaszalon</p>
+              <p><span className="font-semibold text-rose-deep">Address:</span> Munkacsy utca, 3530 Miskolc, Hungary</p>
+              <p><span className="font-semibold text-rose-deep">Phone:</span> +36 1 555 0137</p>
+              <p><span className="font-semibold text-rose-deep">Email:</span> hello@bridalbloom.hu</p>
+            </div>
+
+            <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
+              <p className="font-semibold text-rose-deep mb-1">Opening Hours</p>
+              <p>Mon-Fri: 10:00 - 19:00</p>
+              <p>Saturday: 10:00 - 16:00</p>
+              <p>Sunday: By appointment</p>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-rose-deep/10 shadow-sm min-h-[360px]">
+            <iframe
+              title="Bridal Bloom on Google Maps"
+              src="https://www.google.com/maps?q=Extreme+Ruhaszalon+Miskolc&output=embed"
+              className="h-full w-full min-h-[360px]"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
         </div>
       </section>
 
