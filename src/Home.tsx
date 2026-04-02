@@ -13,6 +13,9 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [productsError, setProductsError] = useState('')
+  const [bookingMessage, setBookingMessage] = useState('')
+  const [bookingError, setBookingError] = useState('')
+  const [submittingBooking, setSubmittingBooking] = useState(false)
 
   useEffect(() => {
     let isActive = true
@@ -51,38 +54,63 @@ export default function Home() {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setBookingError('')
+    setBookingMessage('')
 
     if (!form.name || !form.email || !form.startDateTime) {
-      alert('Please add your name, email, and preferred appointment start time.')
+      setBookingError('Please add your name, email, and preferred appointment start time.')
       return
     }
 
     const start = new Date(form.startDateTime)
     if (Number.isNaN(start.getTime())) {
-      alert('Please provide a valid appointment start time.')
+      setBookingError('Please provide a valid appointment start time.')
       return
     }
 
-    // Fixed booking length: 1.5 hours
-    const end = new Date(start.getTime() + 90 * 60 * 1000)
-    const formatGoogleDate = (value: Date) => value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+    const clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Budapest'
 
-    const params = new URLSearchParams({
-      action: 'TEMPLATE',
-      text: 'Bridal Fitting Appointment',
-      dates: `${formatGoogleDate(start)}/${formatGoogleDate(end)}`,
-      details: [
-        `Client: ${form.name}`,
-        `Email: ${form.email}`,
-        form.notes ? `Notes: ${form.notes}` : '',
-        'Duration: 1.5 hours',
-      ].filter(Boolean).join('\n'),
-      location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
-    })
+    setSubmittingBooking(true)
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          startIso: start.toISOString(),
+          notes: form.notes,
+          timeZone: clientTimeZone,
+        }),
+      })
 
-    window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank')
+      const payload = await response.json()
+
+      if (!response.ok) {
+        if (payload?.fallbackUrl) {
+          window.open(payload.fallbackUrl, '_blank')
+          setBookingMessage('Calendar API is unavailable right now, so we opened a prefilled Google Calendar booking page instead.')
+          return
+        }
+
+        setBookingError(payload?.error || 'Could not create booking right now. Please try again.')
+        return
+      }
+
+      if (payload?.eventLink) {
+        window.open(payload.eventLink, '_blank')
+      }
+
+      setBookingMessage('Appointment added to Google Calendar. The event page opened in a new tab.')
+      setForm({ name: '', email: '', startDateTime: '', notes: '' })
+    } catch (error) {
+      console.error('Booking request failed', error)
+      setBookingError('Could not connect to the booking service. Please try again.')
+    } finally {
+      setSubmittingBooking(false)
+    }
   }
 
   return (
@@ -180,8 +208,10 @@ export default function Home() {
             <div>
               <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Notes (dress styles, size, anything)" className="border rounded px-3 py-2 w-full h-24" />
             </div>
+            {bookingError ? <p className="text-sm text-red-600">{bookingError}</p> : null}
+            {bookingMessage ? <p className="text-sm text-green-700">{bookingMessage}</p> : null}
             <div className="flex justify-end">
-              <button type="submit" className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold">Request Appointment</button>
+              <button type="submit" disabled={submittingBooking} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Creating…' : 'Request Appointment'}</button>
             </div>
           </form>
         </div>

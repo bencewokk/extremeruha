@@ -6,6 +6,7 @@ import Product from './models/Product.js'
 import path from 'path'
 import multer from 'multer'
 import { randomUUID } from 'crypto'
+import { google } from 'googleapis'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
@@ -36,6 +37,41 @@ function enableInMemoryProducts(error) {
 function enableMongoProducts() {
   useInMemoryProducts = false
   console.log('MongoDB connected')
+}
+
+function formatGoogleDate(value) {
+  return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+}
+
+function buildFallbackCalendarUrl({ name, email, notes, start, end }) {
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: 'Bridal Fitting Appointment',
+    dates: `${formatGoogleDate(start)}/${formatGoogleDate(end)}`,
+    details: [
+      `Client: ${name}`,
+      `Email: ${email}`,
+      notes ? `Notes: ${notes}` : '',
+      'Duration: 1.5 hours',
+    ].filter(Boolean).join('\n'),
+    location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
+  })
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function getCalendarClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    return null
+  }
+
+  const auth = new google.auth.OAuth2(clientId, clientSecret)
+  auth.setCredentials({ refresh_token: refreshToken })
+  return google.calendar({ version: 'v3', auth })
 }
 
 // serve uploaded files
@@ -76,6 +112,80 @@ app.post('/api/products', async (req, res) => {
     const doc = { ...req.body, _id: randomUUID() }
     inMemoryProducts = [doc, ...inMemoryProducts]
     res.status(201).json(doc)
+  }
+})
+
+app.post('/api/bookings', async (req, res) => {
+  const { name, email, startIso, notes, timeZone } = req.body || {}
+
+  if (!name || !email || !startIso) {
+    return res.status(400).json({
+      error: 'name, email, and startIso are required',
+    })
+  }
+
+  const start = new Date(startIso)
+  if (Number.isNaN(start.getTime())) {
+    return res.status(400).json({ error: 'Invalid startIso value' })
+  }
+
+  const end = new Date(start.getTime() + 90 * 60 * 1000)
+  const fallbackUrl = buildFallbackCalendarUrl({
+    name,
+    email,
+    notes,
+    start,
+    end,
+  })
+
+  const calendar = getCalendarClient()
+  const calendarId = process.env.GOOGLE_CALENDAR_ID
+  const normalizedTimeZone = timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
+
+  if (!calendar || !calendarId) {
+    return res.status(503).json({
+      error: 'Google Calendar is not configured on the server',
+      fallbackUrl,
+    })
+  }
+
+  try {
+    const event = await calendar.events.insert({
+      calendarId,
+      requestBody: {
+        summary: 'Bridal Fitting Appointment',
+        location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
+        description: [
+          `Client: ${name}`,
+          `Email: ${email}`,
+          notes ? `Notes: ${notes}` : '',
+          'Duration: 1.5 hours',
+        ].filter(Boolean).join('\n'),
+        start: {
+          dateTime: start.toISOString(),
+          timeZone: normalizedTimeZone,
+        },
+        end: {
+          dateTime: end.toISOString(),
+          timeZone: normalizedTimeZone,
+        },
+        attendees: [{ email }],
+      },
+    })
+
+    res.status(201).json({
+      ok: true,
+      eventId: event.data.id,
+      eventLink: event.data.htmlLink,
+      startIso: start.toISOString(),
+      endIso: end.toISOString(),
+    })
+  } catch (error) {
+    console.error('Google Calendar booking failed', error)
+    res.status(502).json({
+      error: 'Could not create Google Calendar event',
+      fallbackUrl,
+    })
   }
 })
 
