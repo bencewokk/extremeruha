@@ -12,7 +12,7 @@ type Product = {
 }
 
 export default function Home() {
-  const [form, setForm] = useState({ name: '', email: '', date: '', notes: '' })
+  const [form, setForm] = useState({ name: '', email: '', startDateTime: '', notes: '' })
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [productsError, setProductsError] = useState('')
@@ -56,7 +56,36 @@ export default function Home() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    window.open('https://calendar.google.com/calendar/u/0/r/eventedit', '_blank')
+
+    if (!form.name || !form.email || !form.startDateTime) {
+      alert('Please add your name, email, and preferred appointment start time.')
+      return
+    }
+
+    const start = new Date(form.startDateTime)
+    if (Number.isNaN(start.getTime())) {
+      alert('Please provide a valid appointment start time.')
+      return
+    }
+
+    // Fixed booking length: 1.5 hours
+    const end = new Date(start.getTime() + 90 * 60 * 1000)
+    const formatGoogleDate = (value: Date) => value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: 'Bridal Fitting Appointment',
+      dates: `${formatGoogleDate(start)}/${formatGoogleDate(end)}`,
+      details: [
+        `Client: ${form.name}`,
+        `Email: ${form.email}`,
+        form.notes ? `Notes: ${form.notes}` : '',
+        'Duration: 1.5 hours',
+      ].filter(Boolean).join('\n'),
+      location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
+    })
+
+    window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank')
   }
 
   return (
@@ -138,11 +167,19 @@ export default function Home() {
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Full name" className="border rounded px-3 py-2 w-full" />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="border rounded px-3 py-2 w-full" />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Full name" className="border rounded px-3 py-2 w-full" required />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="border rounded px-3 py-2 w-full" required />
             </div>
             <div>
-              <input name="date" value={form.date} onChange={handleChange} type="date" className="border rounded px-3 py-2 w-full" />
+              <input
+                name="startDateTime"
+                value={form.startDateTime}
+                onChange={handleChange}
+                type="datetime-local"
+                className="border rounded px-3 py-2 w-full"
+                required
+              />
+              <p className="mt-2 text-xs text-gray-500">Each booking reserves a fixed 1.5-hour time slot.</p>
             </div>
             <div>
               <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Notes (dress styles, size, anything)" className="border rounded px-3 py-2 w-full h-24" />
