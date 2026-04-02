@@ -1,10 +1,7 @@
 export interface DressProduct {
   id: string
   name: string
-  price: number
-  description: string
   style: string
-  sizes: string[]
   image: string
 }
 
@@ -12,37 +9,25 @@ export const dresses: DressProduct[] = [
   {
     id: 'bliss-ivory',
     name: 'Bliss Ivory Lace A-Line',
-    price: 1499,
-    description: 'A timeless lace A-line wedding dress with delicate spaghetti straps and sweetheart neckline.',
     style: 'A-Line',
-    sizes: ['2', '4', '6', '8', '10'],
     image: 'https://images.unsplash.com/photo-1599138819555-d47be6fb04c1?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'radiance-mermaid',
     name: 'Radiance Mermaid Satin',
-    price: 1799,
-    description: 'Sleek satin mermaid gown with crystal belt and dramatic train for modern brides.',
     style: 'Mermaid',
-    sizes: ['4', '6', '8', '10', '12'],
     image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'garden-romance',
     name: 'Garden Romance Boho',
-    price: 1299,
-    description: 'Flowy bohemian dress with floral embroidery, perfect for outdoor ceremonies.',
     style: 'Boho',
-    sizes: ['0', '2', '4', '6', '8', '10'],
     image: 'https://images.unsplash.com/photo-1525219047891-2ecc3a9f1719?auto=format&fit=crop&w=1200&q=80'
   },
   {
     id: 'classic-ballgown',
     name: 'Classic Ballgown Pearl',
-    price: 2099,
-    description: 'Lavish ball gown with pearl embellishments and structured sweetheart bodice.',
     style: 'Ballgown',
-    sizes: ['4', '6', '8', '10', '12', '14'],
     image: 'https://images.unsplash.com/photo-1542201275-3db67f8d0e07?auto=format&fit=crop&w=1200&q=80'
   }
 ]

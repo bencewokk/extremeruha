@@ -3,17 +3,14 @@ import { useEffect, useState } from 'react'
 type Product = {
   _id?: string
   name: string
-  price: number
-  description: string
   style: string
-  sizes: string[]
   image: string
 }
 
 export default function Admin() {
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState<Product>({ name: '', price: 0, description: '', style: '', sizes: [], image: '' })
+  const [form, setForm] = useState<Product>({ name: '', style: '', image: '' })
   const [file, setFile] = useState<File | null>(null)
 
   useEffect(() => {
@@ -31,9 +28,7 @@ export default function Admin() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target as HTMLInputElement
-    if (name === 'price') setForm((s) => ({ ...s, price: Number(value) }))
-    else if (name === 'sizes') setForm((s) => ({ ...s, sizes: value.split(',').map((s) => s.trim()) }))
-    else setForm((s) => ({ ...s, [name]: value } as any))
+    setForm((s) => ({ ...s, [name]: value }))
   }
 
   async function uploadFile(): Promise<string | null> {
@@ -50,15 +45,27 @@ export default function Admin() {
     e.preventDefault()
     setLoading(true)
     try {
+      let image = form.image
       if (file) {
         const url = await uploadFile()
-        if (url) form.image = url
+        if (url) image = url
       }
-      const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+
+      if (!image.trim()) {
+        throw new Error('Image is required')
+      }
+
+      const payload = {
+        name: form.name.trim(),
+        style: form.style.trim(),
+        image: image.trim(),
+      }
+
+      const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error(`Create failed: ${res.status} ${res.statusText}`)
       const data = await res.json()
       setItems((it) => [data, ...it])
-      setForm({ name: '', price: 0, description: '', style: '', sizes: [], image: '' })
+      setForm({ name: '', style: '', image: '' })
       setFile(null)
     } catch (err) {
       console.error(err)
@@ -85,7 +92,7 @@ export default function Admin() {
                 <div key={it._id} className="p-3 bg-white border rounded flex items-start justify-between">
                   <div>
                     <div className="font-semibold">{it.name}</div>
-                    <div className="text-sm text-gray-500">{it.style} • ${it.price}</div>
+                    <div className="text-sm text-gray-500">{it.style}</div>
                   </div>
                   <div className="flex gap-2">
                     <button className="text-sm text-red-600" onClick={() => remove(it._id)}>Delete</button>
@@ -96,17 +103,14 @@ export default function Admin() {
           </div>
           <aside>
             <form onSubmit={createProduct} className="space-y-3 bg-white p-4 border rounded">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="w-full border p-2" />
-              <input name="price" value={form.price} onChange={handleChange} placeholder="Price" type="number" className="w-full border p-2" />
-              <input name="style" value={form.style} onChange={handleChange} placeholder="Style" className="w-full border p-2" />
-              <input name="sizes" value={form.sizes.join(', ')} onChange={handleChange} placeholder="Sizes (comma)" className="w-full border p-2" />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="w-full border p-2" required />
+              <input name="style" value={form.style} onChange={handleChange} placeholder="Style" className="w-full border p-2" required />
               <div>
                 <label className="block text-sm mb-1">Image</label>
                 <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} className="w-full" />
                 <div className="text-xs text-gray-500 mt-1">Or leave blank to use image URL below</div>
               </div>
               <input name="image" value={form.image} onChange={handleChange} placeholder="Or paste image URL" className="w-full border p-2" />
-              <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" className="w-full border p-2 h-24" />
               <button type="submit" disabled={loading} className="w-full bg-rose-deep text-white py-2 rounded">{loading ? 'Saving…' : 'Create'}</button>
             </form>
           </aside>

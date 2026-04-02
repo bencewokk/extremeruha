@@ -4,10 +4,7 @@ type Product = {
   _id?: string
   id?: string
   name: string
-  price: number
-  description: string
   style: string
-  sizes: string[]
   image: string
 }
 
@@ -145,8 +142,7 @@ export default function Home() {
                 <img src={product.image} alt={product.name} className="h-64 w-full object-cover" />
                 <div className="p-4">
                   <h3 className="text-xl font-cormorant text-rose-deep">{product.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{product.style} • ${product.price}</p>
-                  <p className="mt-3 text-gray-600 text-sm">{product.description}</p>
+                  <p className="text-sm text-gray-500 mt-1">{product.style}</p>
                 </div>
               </article>
             ))}
