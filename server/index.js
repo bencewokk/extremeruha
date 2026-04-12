@@ -7,6 +7,8 @@ import path from 'path'
 import multer from 'multer'
 import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
@@ -74,6 +76,77 @@ function getCalendarClient() {
   return google.calendar({ version: 'v3', auth })
 }
 
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH
+const JWT_SECRET = process.env.JWT_SECRET
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h'
+
+function extractBearerToken(req) {
+  const header = req.get('authorization')
+  if (!header) return null
+
+  const [scheme, token] = header.split(' ')
+  if (!scheme || !token || scheme.toLowerCase() !== 'bearer') return null
+  return token
+}
+
+function createAdminToken(username) {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured')
+  }
+
+  return jwt.sign(
+    {
+      sub: username,
+      role: 'admin',
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  )
+}
+
+function verifyAdminToken(token) {
+  if (!JWT_SECRET) return null
+
+  try {
+    return jwt.verify(token, JWT_SECRET)
+  } catch (error) {
+    return null
+  }
+}
+
+async function verifyAdminPassword(inputPassword) {
+  if (ADMIN_PASSWORD_HASH) {
+    return bcrypt.compare(inputPassword, ADMIN_PASSWORD_HASH)
+  }
+
+  if (ADMIN_PASSWORD) {
+    return inputPassword === ADMIN_PASSWORD
+  }
+
+  return false
+}
+
+function requireAdminAuth(req, res, next) {
+  if (!JWT_SECRET) {
+    return res.status(503).json({ error: 'Admin authentication is not configured on the server' })
+  }
+
+  const token = extractBearerToken(req)
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const payload = verifyAdminToken(token)
+  if (!payload) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  req.admin = payload
+  next()
+}
+
 // serve uploaded files
 app.use('/uploads', express.static(uploadsDir))
 
@@ -82,6 +155,32 @@ mongoose.set('bufferCommands', false)
 mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 })
   .then(() => enableMongoProducts())
   .catch((err) => enableInMemoryProducts(err))
+
+app.post('/api/admin/login', async (req, res) => {
+  const { username, password } = req.body || {}
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'username and password are required' })
+  }
+
+  if (!ADMIN_USERNAME) {
+    return res.status(503).json({ error: 'Admin authentication is not configured on the server' })
+  }
+
+  const usernameMatches = username === ADMIN_USERNAME
+  const passwordMatches = await verifyAdminPassword(password)
+
+  if (!usernameMatches || !passwordMatches) {
+    return res.status(401).json({ error: 'Invalid credentials' })
+  }
+
+  try {
+    const token = createAdminToken(username)
+    return res.status(200).json({ token, expiresIn: JWT_EXPIRES_IN })
+  } catch (error) {
+    return res.status(503).json({ error: 'Admin authentication is not configured on the server' })
+  }
+})
 
 app.get('/api/products', async (req, res) => {
   if (useInMemoryProducts) {
@@ -97,7 +196,7 @@ app.get('/api/products', async (req, res) => {
   }
 })
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', requireAdminAuth, async (req, res) => {
   if (useInMemoryProducts) {
     const doc = { ...req.body, _id: randomUUID() }
     inMemoryProducts = [doc, ...inMemoryProducts]
@@ -189,7 +288,7 @@ app.post('/api/bookings', async (req, res) => {
   }
 })
 
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
   if (useInMemoryProducts) {
     const index = inMemoryProducts.findIndex((product) => product._id === req.params.id)
     if (index === -1) return res.status(404).json({ error: 'Product not found' })
@@ -213,7 +312,7 @@ app.put('/api/products/:id', async (req, res) => {
   }
 })
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   if (useInMemoryProducts) {
     const exists = inMemoryProducts.some((product) => product._id === req.params.id)
     if (!exists) return res.status(404).json({ error: 'Product not found' })
@@ -248,7 +347,7 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage })
 
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', requireAdminAuth, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
   const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
   res.json({ url })

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { ADMIN_AUTH_EVENT, getAdminToken } from './admin/auth'
 
 type Product = {
   _id?: string
@@ -11,11 +12,26 @@ type Product = {
 export default function Home() {
   const [form, setForm] = useState({ name: '', email: '', startDateTime: '', notes: '' })
   const [products, setProducts] = useState<Product[]>([])
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => Boolean(getAdminToken()))
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [productsError, setProductsError] = useState('')
   const [bookingMessage, setBookingMessage] = useState('')
   const [bookingError, setBookingError] = useState('')
   const [submittingBooking, setSubmittingBooking] = useState(false)
+
+  useEffect(() => {
+    const syncAuthState = () => {
+      setIsAdminLoggedIn(Boolean(getAdminToken()))
+    }
+
+    window.addEventListener('storage', syncAuthState)
+    window.addEventListener(ADMIN_AUTH_EVENT, syncAuthState)
+
+    return () => {
+      window.removeEventListener('storage', syncAuthState)
+      window.removeEventListener(ADMIN_AUTH_EVENT, syncAuthState)
+    }
+  }, [])
 
   useEffect(() => {
     let isActive = true
@@ -125,7 +141,7 @@ export default function Home() {
               <a className="hover:text-rose-deep" href="#booking">Book</a>
               <a className="hover:text-rose-deep" href="#visit">Visit Us</a>
               <a className="hover:text-rose-deep" href="#contact">Contact</a>
-              <a className="hover:text-rose-deep" href="/admin">Admin</a>
+              {isAdminLoggedIn ? <a className="hover:text-rose-deep" href="/admin">Admin</a> : null}
             </div>
           </div>
           <div>
