@@ -285,12 +285,14 @@ export default function Home() {
 
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          <div className="order-2 lg:order-1 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="order-2 lg:order-1">
             {heroProduct ? (
-              <img src={heroProduct.image} alt={heroProduct.name} className="h-full min-h-[520px] w-full rounded-3xl shadow-lg object-cover" />
+              <div className="aspect-video w-full overflow-hidden rounded-3xl shadow-lg">
+                <img src={heroProduct.image} alt={heroProduct.name} className="h-full w-full object-cover" />
+              </div>
             ) : (
-              <div className="flex h-[520px] w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
+              <div className="aspect-video flex w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
                 {loadingProducts ? 'Kollekcio betoltese…' : 'Adj hozza ruhakat az Admin feluleten, hogy itt megjelenjenek.'}
               </div>
             )}
