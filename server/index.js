@@ -9,20 +9,25 @@ import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { v2 as cloudinary } from 'cloudinary'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-// ensure uploads folder
-const uploadsDir = path.join(process.cwd(), 'server', 'public', 'uploads')
 const seedDataPath = path.join(process.cwd(), 'server', 'seed-data.json')
 const distDir = path.join(process.cwd(), 'dist')
 const distIndexPath = path.join(distDir, 'index.html')
 import fs from 'fs'
-fs.mkdirSync(uploadsDir, { recursive: true })
 
 const seededProducts = JSON.parse(fs.readFileSync(seedDataPath, 'utf8')).map((product) => ({
   ...product,
@@ -146,9 +151,6 @@ function requireAdminAuth(req, res, next) {
   req.admin = payload
   next()
 }
-
-// serve uploaded files
-app.use('/uploads', express.static(uploadsDir))
 
 const MONGO = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bridal'
 mongoose.set('bufferCommands', false)
@@ -312,45 +314,92 @@ app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
   }
 })
 
+function getCloudinaryPublicId(imageUrl) {
+  if (!imageUrl || !imageUrl.includes('res.cloudinary.com')) return null
+  // URL pattern: https://res.cloudinary.com/<cloud>/image/upload/v<ver>/<public_id>.<ext>
+  const match = imageUrl.match(/\/image\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/)
+  return match ? match[1] : null
+}
+
 app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   if (useInMemoryProducts) {
-    const exists = inMemoryProducts.some((product) => product._id === req.params.id)
-    if (!exists) return res.status(404).json({ error: 'Product not found' })
+    const product = inMemoryProducts.find((p) => p._id === req.params.id)
+    if (!product) return res.status(404).json({ error: 'Product not found' })
 
-    inMemoryProducts = inMemoryProducts.filter((product) => product._id !== req.params.id)
+    const publicId = getCloudinaryPublicId(product.image)
+    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+
+    inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
     return res.status(204).end()
   }
 
   try {
-    await Product.findByIdAndDelete(req.params.id)
+    const product = await Product.findByIdAndDelete(req.params.id).lean()
+    if (!product) return res.status(404).json({ error: 'Product not found' })
+
+    const publicId = getCloudinaryPublicId(product.image)
+    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+
     res.status(204).end()
   } catch (err) {
     enableInMemoryProducts(err)
-    const exists = inMemoryProducts.some((product) => product._id === req.params.id)
-    if (!exists) return res.status(404).json({ error: 'Product not found' })
+    const product = inMemoryProducts.find((p) => p._id === req.params.id)
+    if (!product) return res.status(404).json({ error: 'Product not found' })
 
-    inMemoryProducts = inMemoryProducts.filter((product) => product._id !== req.params.id)
+    const publicId = getCloudinaryPublicId(product.image)
+    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+
+    inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
     res.status(204).end()
   }
 })
 
-// Upload endpoint (multipart). Saves locally to server/public/uploads and returns URL.
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir)
+// Upload endpoint — streams to Cloudinary, returns secure URL.
+const ALLOWED_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only image files are allowed (jpeg, png, webp, gif)'))
+    }
   },
-  filename: function (req, file, cb) {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    const name = unique + path.extname(file.originalname)
-    cb(null, name)
-  }
 })
-const upload = multer({ storage })
 
-app.post('/api/upload', requireAdminAuth, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
-  const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
-  res.json({ url })
+app.post('/api/upload', requireAdminAuth, (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
+      return res.status(status).json({ error: err.message })
+    }
+
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return res.status(503).json({ error: 'Image storage is not configured on the server' })
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'extremeruha',
+        transformation: [
+          { width: 1200, crop: 'limit' },
+          { fetch_format: 'auto', quality: 'auto' },
+        ],
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error', error)
+          return res.status(502).json({ error: 'Image upload failed' })
+        }
+        res.json({ url: result.secure_url })
+      }
+    )
+
+    uploadStream.end(req.file.buffer)
+  })
 })
 
 if (fs.existsSync(distIndexPath)) {

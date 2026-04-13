@@ -17,6 +17,7 @@ export default function Admin() {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [form, setForm] = useState<Product>({ name: '', style: '', image: '' })
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) {
@@ -149,6 +150,10 @@ export default function Admin() {
       setItems((it) => [data, ...it])
       setForm({ name: '', style: '', image: '' })
       setFile(null)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
     } catch (err) {
       console.error(err)
       alert(err instanceof Error ? err.message : 'Failed to create product')
@@ -236,7 +241,13 @@ export default function Admin() {
               <input name="style" value={form.style} onChange={handleChange} placeholder="Style" className="w-full border p-2" required />
               <div>
                 <label className="block text-sm mb-1">Image</label>
-                <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)} className="w-full" />
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const f = e.target.files ? e.target.files[0] : null
+                  setFile(f)
+                  if (previewUrl) URL.revokeObjectURL(previewUrl)
+                  setPreviewUrl(f ? URL.createObjectURL(f) : null)
+                }} className="w-full" />
+                {previewUrl && <img src={previewUrl} alt="Preview" className="mt-2 max-h-40 w-full rounded object-contain" />}
                 <div className="text-xs text-gray-500 mt-1">Or leave blank to use image URL below</div>
               </div>
               <input name="image" value={form.image} onChange={handleChange} placeholder="Or paste image URL" className="w-full border p-2" />
