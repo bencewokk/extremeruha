@@ -50,7 +50,7 @@ function formatGoogleDate(value) {
   return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
-function buildFallbackCalendarUrl({ name, email, notes, start, end }) {
+function buildFallbackCalendarUrl({ name, email, phone, notes, start, end }) {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: 'Bridal Fitting Appointment',
@@ -58,6 +58,7 @@ function buildFallbackCalendarUrl({ name, email, notes, start, end }) {
     details: [
       `Client: ${name}`,
       `Email: ${email}`,
+      `Phone: ${phone}`,
       notes ? `Notes: ${notes}` : '',
       'Duration: 1.5 hours',
     ].filter(Boolean).join('\n'),
@@ -217,11 +218,11 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
 })
 
 app.post('/api/bookings', async (req, res) => {
-  const { name, email, startIso, notes, timeZone } = req.body || {}
+  const { name, email, phone, startIso, notes, timeZone } = req.body || {}
 
-  if (!name || !email || !startIso) {
+  if (!name || !email || !phone || !startIso) {
     return res.status(400).json({
-      error: 'name, email, and startIso are required',
+      error: 'name, email, phone, and startIso are required',
     })
   }
 
@@ -234,6 +235,7 @@ app.post('/api/bookings', async (req, res) => {
   const fallbackUrl = buildFallbackCalendarUrl({
     name,
     email,
+    phone,
     notes,
     start,
     end,
@@ -259,6 +261,7 @@ app.post('/api/bookings', async (req, res) => {
         description: [
           `Client: ${name}`,
           `Email: ${email}`,
+          `Phone: ${phone}`,
           notes ? `Notes: ${notes}` : '',
           'Duration: 1.5 hours',
         ].filter(Boolean).join('\n'),

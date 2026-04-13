@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ADMIN_AUTH_EVENT, getAdminToken } from './admin/auth'
 import ProductCarousel from './components/ProductCarousel'
 
@@ -13,9 +13,17 @@ type Product = {
   image: string
 }
 
+function extractTags(style: string) {
+  return style
+    .split(/[,/|]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
 export default function Home() {
-  const [form, setForm] = useState({ name: '', email: '', startDateTime: '', notes: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
   const [products, setProducts] = useState<Product[]>([])
+  const [activeTags, setActiveTags] = useState<string[]>([])
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => Boolean(getAdminToken()))
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [productsError, setProductsError] = useState('')
@@ -68,7 +76,41 @@ export default function Home() {
     }
   }, [])
 
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>()
+
+    products.forEach((product) => {
+      const extracted = extractTags(product.style)
+      if (extracted.length === 0 && product.style.trim()) {
+        tags.add(product.style.trim())
+        return
+      }
+
+      extracted.forEach((tag) => tags.add(tag))
+    })
+
+    return Array.from(tags)
+  }, [products])
+
+  useEffect(() => {
+    setActiveTags((prev) => prev.filter((tag) => availableTags.includes(tag)))
+  }, [availableTags])
+
+  const filteredProducts = useMemo(() => {
+    if (activeTags.length === 0) return products
+
+    return products.filter((product) => {
+      const extracted = extractTags(product.style)
+      const productTags = extracted.length > 0 ? extracted : [product.style.trim()].filter(Boolean)
+      return activeTags.some((tag) => productTags.includes(tag))
+    })
+  }, [activeTags, products])
+
   const heroProduct = products[0]
+
+  function toggleTag(tag: string) {
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]))
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
@@ -79,8 +121,8 @@ export default function Home() {
     setBookingError('')
     setBookingMessage('')
 
-    if (!form.name || !form.email || !form.startDateTime) {
-      setBookingError('Please add your name, email, and preferred appointment start time.')
+    if (!form.name || !form.email || !form.phone || !form.startDateTime) {
+      setBookingError('Please add your name, email, phone number, and preferred appointment start time.')
       return
     }
 
@@ -100,6 +142,7 @@ export default function Home() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
+          phone: form.phone,
           startIso: start.toISOString(),
           notes: form.notes,
           timeZone: clientTimeZone,
@@ -124,7 +167,7 @@ export default function Home() {
       }
 
       setBookingMessage('Appointment added to Google Calendar. The event page opened in a new tab.')
-      setForm({ name: '', email: '', startDateTime: '', notes: '' })
+      setForm({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
     } catch (error) {
       console.error('Booking request failed', error)
       setBookingError('Could not connect to the booking service. Please try again.')
@@ -181,18 +224,42 @@ export default function Home() {
       <section id="collection" className="py-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
           <h2 className="text-3xl font-cormorant text-rose-deep">The Collection</h2>
+          {availableTags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTags([])}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${activeTags.length === 0 ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
+              >
+                All
+              </button>
+              {availableTags.map((tag) => {
+                const active = activeTags.includes(tag)
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${active ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
           {productsError ? <p className="mt-2 text-sm text-gray-500">{productsError}</p> : null}
         </div>
         {loadingProducts ? (
           <div className="mx-auto max-w-6xl px-6">
             <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Loading collection…</div>
           </div>
-        ) : products.length > 0 ? (
-          <ProductCarousel products={products} />
+        ) : filteredProducts.length > 0 ? (
+          <ProductCarousel products={filteredProducts} />
         ) : (
           <div className="mx-auto max-w-6xl px-6">
             <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
-              No products yet. Add items in Admin to show them here.
+              {products.length > 0 ? 'No items match the selected tags.' : 'No products yet. Add items in Admin to show them here.'}
             </div>
           </div>
         )}
@@ -209,6 +276,17 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input name="name" value={form.name} onChange={handleChange} placeholder="Full name" className="border rounded px-3 py-2 w-full" required />
               <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="border rounded px-3 py-2 w-full" required />
+            </div>
+            <div>
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                type="tel"
+                placeholder="Phone number"
+                className="border rounded px-3 py-2 w-full"
+                required
+              />
             </div>
             <div>
               <input
