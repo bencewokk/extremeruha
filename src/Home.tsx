@@ -286,7 +286,7 @@ export default function Home() {
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <div className="order-2 lg:order-1">
+          <div className="order-2 lg:order-1 mb-[50.625%]">
             {heroProduct ? (
               <div className="relative aspect-video w-full overflow-visible">
                 <img
