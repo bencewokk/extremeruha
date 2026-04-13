@@ -6,7 +6,7 @@ const Admin = React.lazy(() => import('./admin/Admin'))
 
 export default function App() {
   return (
-    <React.Suspense fallback={<div className="p-6">Loading…</div>}>
+    <React.Suspense fallback={<div className="p-6">Betoltes…</div>}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<Admin />} />

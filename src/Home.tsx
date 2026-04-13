@@ -98,7 +98,7 @@ export default function Home() {
 
         console.error('Failed to load homepage products', err)
         setProducts([])
-        setProductsError('The collection is unavailable right now.')
+        setProductsError('A kollekcio jelenleg nem elerheto.')
       } finally {
         if (isActive) setLoadingProducts(false)
       }
@@ -175,7 +175,7 @@ export default function Home() {
       const payload = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'Could not load availability')
+        throw new Error(payload?.error || 'Nem sikerult betolteni az idopontokat')
       }
 
       const slots = Array.isArray(payload?.slots) ? payload.slots : []
@@ -189,7 +189,7 @@ export default function Home() {
     } catch (error) {
       console.error('Availability request failed', error)
       setAvailableSlots([])
-      setAvailabilityError(error instanceof Error ? error.message : 'Could not load availability')
+      setAvailabilityError(error instanceof Error ? error.message : 'Nem sikerult betolteni az idopontokat')
       setForm((s) => ({ ...s, startDateTime: '' }))
     } finally {
       setLoadingAvailability(false)
@@ -207,13 +207,13 @@ export default function Home() {
     setBookingMessage('')
 
     if (!form.name || !form.email || !form.phone || !form.startDateTime) {
-      setBookingError('Please add your name, email, phone number, and preferred appointment start time.')
+      setBookingError('Kerlek add meg a nevedet, email-cimedet, telefonszamodat es valassz idopontot.')
       return
     }
 
     const start = new Date(form.startDateTime)
     if (Number.isNaN(start.getTime())) {
-      setBookingError('Please provide a valid appointment start time.')
+      setBookingError('Ervenytelen idopont.')
       return
     }
 
@@ -239,11 +239,11 @@ export default function Home() {
       if (!response.ok) {
         if (payload?.fallbackUrl) {
           window.open(payload.fallbackUrl, '_blank')
-          setBookingMessage('Calendar API is unavailable right now, so we opened a prefilled Google Calendar booking page instead.')
+          setBookingMessage('A naptar API most nem elerheto, ezert egy elore kitoltott Google Naptar oldalt nyitottunk meg.')
           return
         }
 
-        setBookingError(payload?.error || 'Could not create booking right now. Please try again.')
+        setBookingError(payload?.error || 'A foglalas most nem sikerult. Kerlek probald ujra.')
         return
       }
 
@@ -251,12 +251,12 @@ export default function Home() {
         window.open(payload.eventLink, '_blank')
       }
 
-      setBookingMessage('Appointment added to Google Calendar. The event page opened in a new tab.')
+      setBookingMessage('A foglalas sikeresen bekerult a Google Naptarba. Az esemeny uj lapon nyilt meg.')
       setForm({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
       await loadAvailabilityForDate(selectedDate)
     } catch (error) {
       console.error('Booking request failed', error)
-      setBookingError('Could not connect to the booking service. Please try again.')
+      setBookingError('Nem sikerult kapcsolodni a foglalasi szolgaltatashoz. Kerlek probald ujra.')
     } finally {
       setSubmittingBooking(false)
     }
@@ -268,17 +268,17 @@ export default function Home() {
       <nav className="sticky top-0 z-40 bg-white/60 backdrop-blur border-b border-rose-deep/10">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="text-2xl font-serif font-cormorant text-rose-deep">Bridal Bloom</div>
+            <div className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</div>
             <div className="hidden md:flex gap-6 text-gray-600">
-              <a className="hover:text-rose-deep" href="#collection">Collection</a>
-              <a className="hover:text-rose-deep" href="#booking">Book</a>
-              <a className="hover:text-rose-deep" href="#visit">Visit Us</a>
-              <a className="hover:text-rose-deep" href="#contact">Contact</a>
+              <a className="hover:text-rose-deep" href="#collection">Kollekcio</a>
+              <a className="hover:text-rose-deep" href="#booking">Idopontfoglalas</a>
+              <a className="hover:text-rose-deep" href="#visit">Latogatas</a>
+              <a className="hover:text-rose-deep" href="#contact">Kapcsolat</a>
               {isAdminLoggedIn ? <a className="hover:text-rose-deep" href="/admin">Admin</a> : null}
             </div>
           </div>
           <div>
-            <a href="#booking" className="inline-flex items-center rounded-full bg-rose-deep px-4 py-2 text-white text-sm font-semibold shadow">Book Fitting</a>
+            <a href="#booking" className="inline-flex items-center rounded-full bg-rose-deep px-4 py-2 text-white text-sm font-semibold shadow">Idopontfoglalas</a>
           </div>
         </div>
       </nav>
@@ -291,16 +291,16 @@ export default function Home() {
               <img src={heroProduct.image} alt={heroProduct.name} className="w-full rounded-3xl shadow-lg object-cover h-[520px]" />
             ) : (
               <div className="flex h-[520px] w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
-                {loadingProducts ? 'Loading collection…' : 'Add dresses in Admin to feature them here.'}
+                {loadingProducts ? 'Kollekcio betoltese…' : 'Adj hozza ruhakat az Admin feluleten, hogy itt megjelenjenek.'}
               </div>
             )}
           </div>
           <div className="order-1 lg:order-2">
-            <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">An editorial collection for the <span className="italic">beginnings</span> of forever</h1>
-            <p className="text-lg text-gray-600 mb-6">Soft silhouettes, heirloom-quality lace, and modern tailoring. Each gown is selected for its quiet romance and timeless beauty.</p>
+            <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Exkluziv menyasszonyi kollekcio az <span className="italic">orok</span> pillanatokhoz</h1>
+            <p className="text-lg text-gray-600 mb-6">Finom vonalvezetes, modern szabvonalak es idotallo elegancia. Minden ruhat gondosan valogatunk, hogy kulonleges legyen a nagy napod.</p>
             <div className="flex gap-4">
-              <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Explore Collection</a>
-              <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Book a Fitting</a>
+              <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
+              <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Proba foglalasa</a>
             </div>
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function Home() {
       {/* Collection Grid */}
       <section id="collection" className="py-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
-          <h2 className="text-3xl font-cormorant text-rose-deep">The Collection</h2>
+          <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -317,7 +317,7 @@ export default function Home() {
                 onClick={() => setActiveTags([])}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${activeTags.length === 0 ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
               >
-                All
+                Osszes
               </button>
               {availableTags.map((tag) => {
                 const active = activeTags.includes(tag)
@@ -338,14 +338,14 @@ export default function Home() {
         </div>
         {loadingProducts ? (
           <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Loading collection…</div>
+            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Kollekcio betoltese…</div>
           </div>
         ) : filteredProducts.length > 0 ? (
           <ProductCarousel products={filteredProducts} />
         ) : (
           <div className="mx-auto max-w-6xl px-6">
             <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
-              {products.length > 0 ? 'No items match the selected tags.' : 'No products yet. Add items in Admin to show them here.'}
+              {products.length > 0 ? 'Nincs a kijelolt cimkeknek megfelelo ruha.' : 'Meg nincs feltoltott ruha. Add hozza az Admin feluleten.'}
             </div>
           </div>
         )}
@@ -355,13 +355,13 @@ export default function Home() {
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-2xl bg-white border border-rose-deep/10 p-6">
           <div>
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Personalized fittings that feel like home</h3>
-            <p className="text-gray-600">Schedule a private appointment and let our stylists curate options tailored to your vision and silhouette.</p>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Szemelyre szabott ruhaproba, nyugodt kornyezetben</h3>
+            <p className="text-gray-600">Foglalj privat idopontot, es stylistjaink segitenek megtalalni a hozzad leginkabb illo ruhat.</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Full name" className="border rounded px-3 py-2 w-full" required />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="border rounded px-3 py-2 w-full" required />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes nev" className="border rounded px-3 py-2 w-full" required />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cim" className="border rounded px-3 py-2 w-full" required />
             </div>
             <div>
               <input
@@ -369,13 +369,13 @@ export default function Home() {
                 value={form.phone}
                 onChange={handleChange}
                 type="tel"
-                placeholder="Phone number"
+                placeholder="Telefonszam"
                 className="border rounded px-3 py-2 w-full"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Select date</label>
+              <label className="block text-sm text-gray-700 mb-1">Datum valasztasa</label>
               <input
                 type="date"
                 value={selectedDate}
@@ -385,13 +385,13 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Available start times</label>
+              <label className="block text-sm text-gray-700 mb-1">Elerheto kezdesi idopontok</label>
               {loadingAvailability ? (
-                <p className="text-sm text-gray-500">Loading free slots...</p>
+                <p className="text-sm text-gray-500">Szabad idopontok betoltese...</p>
               ) : availabilityError ? (
                 <p className="text-sm text-red-600">{availabilityError}</p>
               ) : availableSlots.length === 0 ? (
-                <p className="text-sm text-gray-500">No free slots for this day.</p>
+                <p className="text-sm text-gray-500">Erre a napra nincs szabad idopont.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {availableSlots.map((slot) => {
@@ -409,15 +409,15 @@ export default function Home() {
                   })}
                 </div>
               )}
-              <p className="mt-2 text-xs text-gray-500">Slots are pulled from Google Calendar, 90 minutes long, and start every 15 minutes.</p>
+              <p className="mt-2 text-xs text-gray-500">Az idopontok a Google Naptarbol erkeznek, 90 percesek, es 15 percenkent indulnak.</p>
             </div>
             <div>
-              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Notes (dress styles, size, anything)" className="border rounded px-3 py-2 w-full h-24" />
+              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzes (stilus, meret, egyeb)" className="border rounded px-3 py-2 w-full h-24" />
             </div>
             {bookingError ? <p className="text-sm text-red-600">{bookingError}</p> : null}
             {bookingMessage ? <p className="text-sm text-green-700">{bookingMessage}</p> : null}
             <div className="flex justify-end">
-              <button type="submit" disabled={submittingBooking} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Creating…' : 'Request Appointment'}</button>
+              <button type="submit" disabled={submittingBooking || !form.startDateTime} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Foglalas folyamatban…' : 'Idopont foglalasa'}</button>
             </div>
           </form>
         </div>
@@ -427,23 +427,23 @@ export default function Home() {
       <section id="visit" className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           <div className="rounded-2xl bg-white border border-rose-deep/10 p-6 shadow-sm">
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Visit Extreme Ruhaszalon</h3>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Latogass el az extremeruha szalonba</h3>
             <p className="text-gray-600 mb-5">
-              Our boutique is in the city center with private fitting rooms and one-on-one bridal styling.
+              Szalonunk a belvarosban var, privat probafulkekkel es szemelyes tanacsadassal.
             </p>
 
             <div className="space-y-3 text-gray-700">
-              <p><span className="font-semibold text-rose-deep">Business:</span> Extreme Ruhaszalon</p>
-              <p><span className="font-semibold text-rose-deep">Address:</span> Munkacsy utca, 3530 Miskolc, Hungary</p>
-              <p><span className="font-semibold text-rose-deep">Phone:</span> +36 1 555 0137</p>
-              <p><span className="font-semibold text-rose-deep">Email:</span> hello@bridalbloom.hu</p>
+              <p><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</p>
+              <p><span className="font-semibold text-rose-deep">Cim:</span> Munkacsy utca, 3530 Miskolc, Magyarorszag</p>
+              <p><span className="font-semibold text-rose-deep">Telefon:</span> +36 1 555 0137</p>
+              <p><span className="font-semibold text-rose-deep">Email:</span> hello@extremeruha.hu</p>
             </div>
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
-              <p className="font-semibold text-rose-deep mb-1">Opening Hours</p>
-              <p>Mon-Fri: 10:00 - 19:00</p>
-              <p>Saturday: 10:00 - 16:00</p>
-              <p>Sunday: By appointment</p>
+              <p className="font-semibold text-rose-deep mb-1">Nyitvatartas</p>
+              <p>Hetfo-Pentek: 10:00 - 19:00</p>
+              <p>Szombat: 10:00 - 16:00</p>
+              <p>Vasarnap: Elore egyeztetett idopontban</p>
             </div>
           </div>
 
@@ -462,7 +462,7 @@ export default function Home() {
       {/* Footer */}
       <footer id="contact" className="border-t border-rose-deep/10 bg-white py-6">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between text-sm text-gray-600">
-          <div>© {new Date().getFullYear()} Bridal Bloom</div>
+          <div>© {new Date().getFullYear()} extremeruha</div>
           <div className="flex gap-4">
             <a href="#" className="hover:text-rose-deep">Instagram</a>
             <a href="#" className="hover:text-rose-deep">Pinterest</a>

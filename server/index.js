@@ -94,14 +94,14 @@ function buildAvailableStarts({ windowStart, windowEnd, busyRanges, stepMinutes,
 function buildFallbackCalendarUrl({ name, email, phone, notes, start, end }) {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: 'Bridal Fitting Appointment',
+    text: 'Menyasszonyi ruhaproba',
     dates: `${formatGoogleDate(start)}/${formatGoogleDate(end)}`,
     details: [
       `Client: ${name}`,
       `Email: ${email}`,
       `Phone: ${phone}`,
       notes ? `Notes: ${notes}` : '',
-      'Duration: 1.5 hours',
+      'Idotartam: 1,5 ora',
     ].filter(Boolean).join('\n'),
     location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
   })
@@ -264,7 +264,7 @@ app.get('/api/bookings/availability', async (req, res) => {
   const to = new Date(toIso)
 
   if (!fromIso || !toIso || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) {
-    return res.status(400).json({ error: 'fromIso and toIso are required and must form a valid range' })
+    return res.status(400).json({ error: 'A fromIso es toIso kotelezo, es ervenyes idotartomanyt kell megadni' })
   }
 
   const calendar = getCalendarClient()
@@ -272,7 +272,7 @@ app.get('/api/bookings/availability', async (req, res) => {
   const normalizedTimeZone = timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
 
   if (!calendar || !calendarId) {
-    return res.status(503).json({ error: 'Google Calendar is not configured on the server' })
+    return res.status(503).json({ error: 'A Google Naptar nincs beallitva a szerveren' })
   }
 
   try {
@@ -292,7 +292,7 @@ app.get('/api/bookings/availability', async (req, res) => {
     })
   } catch (error) {
     console.error('Google Calendar availability check failed', error)
-    return res.status(502).json({ error: 'Could not load availability from Google Calendar' })
+    return res.status(502).json({ error: 'Nem sikerult betolteni a szabad idopontokat a Google Naptarbol' })
   }
 })
 
@@ -301,17 +301,17 @@ app.post('/api/bookings', async (req, res) => {
 
   if (!name || !email || !phone || !startIso) {
     return res.status(400).json({
-      error: 'name, email, phone, and startIso are required',
+      error: 'A name, email, phone es startIso mezok kotelezoek',
     })
   }
 
   const start = new Date(startIso)
   if (Number.isNaN(start.getTime())) {
-    return res.status(400).json({ error: 'Invalid startIso value' })
+    return res.status(400).json({ error: 'Ervenytelen startIso ertek' })
   }
 
   if (start.getUTCMinutes() % SLOT_STEP_MINUTES !== 0 || start.getUTCSeconds() !== 0 || start.getUTCMilliseconds() !== 0) {
-    return res.status(400).json({ error: `Booking start time must be in ${SLOT_STEP_MINUTES}-minute increments` })
+    return res.status(400).json({ error: `A foglalas kezdete csak ${SLOT_STEP_MINUTES} perces lepeskozokben lehet` })
   }
 
   const end = new Date(start.getTime() + APPOINTMENT_DURATION_MINUTES * 60 * 1000)
@@ -330,7 +330,7 @@ app.post('/api/bookings', async (req, res) => {
 
   if (!calendar || !calendarId) {
     return res.status(503).json({
-      error: 'Google Calendar is not configured on the server',
+      error: 'A Google Naptar nincs beallitva a szerveren',
       fallbackUrl,
     })
   }
@@ -339,21 +339,21 @@ app.post('/api/bookings', async (req, res) => {
     const busyRanges = await getBusyRanges(calendar, calendarId, start.toISOString(), end.toISOString(), normalizedTimeZone)
     const hasConflict = busyRanges.some((busy) => rangesOverlap(start, end, busy.start, busy.end))
     if (hasConflict) {
-      return res.status(409).json({ error: 'This time slot is no longer available. Please pick another slot.' })
+      return res.status(409).json({ error: 'Ez az idopont mar nem szabad. Kerlek valassz masikat.' })
     }
 
     const event = await calendar.events.insert({
       calendarId,
       eventId: `bridal-${start.getTime()}`,
       requestBody: {
-        summary: 'Bridal Fitting Appointment',
+        summary: 'Menyasszonyi ruhaproba',
         location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
         description: [
           `Client: ${name}`,
           `Email: ${email}`,
           `Phone: ${phone}`,
           notes ? `Notes: ${notes}` : '',
-          'Duration: 1.5 hours',
+          'Idotartam: 1,5 ora',
         ].filter(Boolean).join('\n'),
         start: {
           dateTime: start.toISOString(),
@@ -376,7 +376,7 @@ app.post('/api/bookings', async (req, res) => {
     })
   } catch (error) {
     if (error?.code === 409) {
-      return res.status(409).json({ error: 'This time slot is no longer available. Please pick another slot.' })
+      return res.status(409).json({ error: 'Ez az idopont mar nem szabad. Kerlek valassz masikat.' })
     }
 
     console.error('Google Calendar booking failed', error)
