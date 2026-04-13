@@ -50,6 +50,47 @@ function formatGoogleDate(value) {
   return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
+const APPOINTMENT_DURATION_MINUTES = 90
+const SLOT_STEP_MINUTES = 15
+
+function rangesOverlap(startA, endA, startB, endB) {
+  return startA < endB && startB < endA
+}
+
+async function getBusyRanges(calendar, calendarId, timeMinIso, timeMaxIso, timeZone) {
+  const freeBusy = await calendar.freebusy.query({
+    requestBody: {
+      timeMin: timeMinIso,
+      timeMax: timeMaxIso,
+      timeZone,
+      items: [{ id: calendarId }],
+    },
+  })
+
+  const busy = freeBusy.data?.calendars?.[calendarId]?.busy || []
+  return busy
+    .map((item) => ({ start: new Date(item.start), end: new Date(item.end) }))
+    .filter((item) => !Number.isNaN(item.start.getTime()) && !Number.isNaN(item.end.getTime()))
+}
+
+function buildAvailableStarts({ windowStart, windowEnd, busyRanges, stepMinutes, durationMinutes }) {
+  const available = []
+  const stepMs = stepMinutes * 60 * 1000
+  const durationMs = durationMinutes * 60 * 1000
+
+  for (let cursor = windowStart.getTime(); cursor + durationMs <= windowEnd.getTime(); cursor += stepMs) {
+    const start = new Date(cursor)
+    const end = new Date(cursor + durationMs)
+
+    const hasConflict = busyRanges.some((busy) => rangesOverlap(start, end, busy.start, busy.end))
+    if (!hasConflict) {
+      available.push(start.toISOString())
+    }
+  }
+
+  return available
+}
+
 function buildFallbackCalendarUrl({ name, email, phone, notes, start, end }) {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
@@ -217,6 +258,44 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
   }
 })
 
+app.get('/api/bookings/availability', async (req, res) => {
+  const { fromIso, toIso, timeZone } = req.query
+  const from = new Date(fromIso)
+  const to = new Date(toIso)
+
+  if (!fromIso || !toIso || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) {
+    return res.status(400).json({ error: 'fromIso and toIso are required and must form a valid range' })
+  }
+
+  const calendar = getCalendarClient()
+  const calendarId = process.env.GOOGLE_CALENDAR_ID
+  const normalizedTimeZone = timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
+
+  if (!calendar || !calendarId) {
+    return res.status(503).json({ error: 'Google Calendar is not configured on the server' })
+  }
+
+  try {
+    const busyRanges = await getBusyRanges(calendar, calendarId, from.toISOString(), to.toISOString(), normalizedTimeZone)
+    const slots = buildAvailableStarts({
+      windowStart: from,
+      windowEnd: to,
+      busyRanges,
+      stepMinutes: SLOT_STEP_MINUTES,
+      durationMinutes: APPOINTMENT_DURATION_MINUTES,
+    })
+
+    return res.json({
+      slots,
+      stepMinutes: SLOT_STEP_MINUTES,
+      durationMinutes: APPOINTMENT_DURATION_MINUTES,
+    })
+  } catch (error) {
+    console.error('Google Calendar availability check failed', error)
+    return res.status(502).json({ error: 'Could not load availability from Google Calendar' })
+  }
+})
+
 app.post('/api/bookings', async (req, res) => {
   const { name, email, phone, startIso, notes, timeZone } = req.body || {}
 
@@ -231,7 +310,11 @@ app.post('/api/bookings', async (req, res) => {
     return res.status(400).json({ error: 'Invalid startIso value' })
   }
 
-  const end = new Date(start.getTime() + 90 * 60 * 1000)
+  if (start.getUTCMinutes() % SLOT_STEP_MINUTES !== 0 || start.getUTCSeconds() !== 0 || start.getUTCMilliseconds() !== 0) {
+    return res.status(400).json({ error: `Booking start time must be in ${SLOT_STEP_MINUTES}-minute increments` })
+  }
+
+  const end = new Date(start.getTime() + APPOINTMENT_DURATION_MINUTES * 60 * 1000)
   const fallbackUrl = buildFallbackCalendarUrl({
     name,
     email,
@@ -253,8 +336,15 @@ app.post('/api/bookings', async (req, res) => {
   }
 
   try {
+    const busyRanges = await getBusyRanges(calendar, calendarId, start.toISOString(), end.toISOString(), normalizedTimeZone)
+    const hasConflict = busyRanges.some((busy) => rangesOverlap(start, end, busy.start, busy.end))
+    if (hasConflict) {
+      return res.status(409).json({ error: 'This time slot is no longer available. Please pick another slot.' })
+    }
+
     const event = await calendar.events.insert({
       calendarId,
+      eventId: `bridal-${start.getTime()}`,
       requestBody: {
         summary: 'Bridal Fitting Appointment',
         location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
@@ -285,6 +375,10 @@ app.post('/api/bookings', async (req, res) => {
       endIso: end.toISOString(),
     })
   } catch (error) {
+    if (error?.code === 409) {
+      return res.status(409).json({ error: 'This time slot is no longer available. Please pick another slot.' })
+    }
+
     console.error('Google Calendar booking failed', error)
     res.status(502).json({
       error: 'Could not create Google Calendar event',

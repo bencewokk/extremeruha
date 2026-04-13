@@ -13,6 +13,37 @@ type Product = {
   image: string
 }
 
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getBusinessWindow(dateInput: string) {
+  const [year, month, day] = dateInput.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+
+  if (Number.isNaN(date.getTime())) return null
+
+  const weekDay = date.getDay()
+  if (weekDay === 0) return null // Sunday closed
+
+  const openHour = 10
+  const closeHour = weekDay === 6 ? 16 : 19
+
+  const from = new Date(year, month - 1, day, openHour, 0, 0, 0)
+  const to = new Date(year, month - 1, day, closeHour, 0, 0, 0)
+  return { from, to }
+}
+
+function formatSlotLabel(slotIso: string) {
+  return new Date(slotIso).toLocaleTimeString('hu-HU', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function extractTags(style: string) {
   return style
     .split(/[,/|]/)
@@ -22,6 +53,10 @@ function extractTags(style: string) {
 
 export default function Home() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
+  const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(new Date()))
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState('')
   const [products, setProducts] = useState<Product[]>([])
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => Boolean(getAdminToken()))
@@ -116,6 +151,56 @@ export default function Home() {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
   }
 
+  async function loadAvailabilityForDate(dateValue: string, preferredSlot = '') {
+    const window = getBusinessWindow(dateValue)
+    if (!window) {
+      setAvailableSlots([])
+      setAvailabilityError('')
+      setForm((s) => ({ ...s, startDateTime: '' }))
+      return
+    }
+
+    setLoadingAvailability(true)
+    setAvailabilityError('')
+
+    try {
+      const clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Budapest'
+      const params = new URLSearchParams({
+        fromIso: window.from.toISOString(),
+        toIso: window.to.toISOString(),
+        timeZone: clientTimeZone,
+      })
+
+      const response = await fetch(`/api/bookings/availability?${params.toString()}`)
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Could not load availability')
+      }
+
+      const slots = Array.isArray(payload?.slots) ? payload.slots : []
+      setAvailableSlots(slots)
+
+      const nextSlot = preferredSlot && slots.includes(preferredSlot)
+        ? preferredSlot
+        : (slots[0] || '')
+
+      setForm((s) => ({ ...s, startDateTime: nextSlot }))
+    } catch (error) {
+      console.error('Availability request failed', error)
+      setAvailableSlots([])
+      setAvailabilityError(error instanceof Error ? error.message : 'Could not load availability')
+      setForm((s) => ({ ...s, startDateTime: '' }))
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAvailabilityForDate(selectedDate, form.startDateTime)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setBookingError('')
@@ -168,6 +253,7 @@ export default function Home() {
 
       setBookingMessage('Appointment added to Google Calendar. The event page opened in a new tab.')
       setForm({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
+      await loadAvailabilityForDate(selectedDate)
     } catch (error) {
       console.error('Booking request failed', error)
       setBookingError('Could not connect to the booking service. Please try again.')
@@ -289,15 +375,41 @@ export default function Home() {
               />
             </div>
             <div>
+              <label className="block text-sm text-gray-700 mb-1">Select date</label>
               <input
-                name="startDateTime"
-                value={form.startDateTime}
-                onChange={handleChange}
-                type="datetime-local"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 className="border rounded px-3 py-2 w-full"
                 required
               />
-              <p className="mt-2 text-xs text-gray-500">Each booking reserves a fixed 1.5-hour time slot.</p>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Available start times</label>
+              {loadingAvailability ? (
+                <p className="text-sm text-gray-500">Loading free slots...</p>
+              ) : availabilityError ? (
+                <p className="text-sm text-red-600">{availabilityError}</p>
+              ) : availableSlots.length === 0 ? (
+                <p className="text-sm text-gray-500">No free slots for this day.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableSlots.map((slot) => {
+                    const active = form.startDateTime === slot
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setForm((s) => ({ ...s, startDateTime: slot }))}
+                        className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${active ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
+                      >
+                        {formatSlotLabel(slot)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              <p className="mt-2 text-xs text-gray-500">Slots are pulled from Google Calendar, 90 minutes long, and start every 15 minutes.</p>
             </div>
             <div>
               <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Notes (dress styles, size, anything)" className="border rounded px-3 py-2 w-full h-24" />
