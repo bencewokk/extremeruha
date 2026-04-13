@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { ADMIN_AUTH_EVENT, getAdminToken } from './admin/auth'
 import ProductCarousel from './components/ProductCarousel'
 
+declare const __BUILD_TIME__: string
+declare const __GIT_HASH__: string
+
 type Product = {
   _id?: string
   id?: string
@@ -274,6 +277,9 @@ export default function Home() {
             <a href="#" className="hover:text-rose-deep">Instagram</a>
             <a href="#" className="hover:text-rose-deep">Pinterest</a>
           </div>
+        </div>
+        <div className="mx-auto max-w-6xl px-6 mt-2 text-xs text-gray-400">
+          Build: {new Date(__BUILD_TIME__).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} &middot; {__GIT_HASH__}
         </div>
       </footer>
     </div>
