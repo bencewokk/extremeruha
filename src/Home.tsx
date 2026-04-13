@@ -288,8 +288,12 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="order-2 lg:order-1">
             {heroProduct ? (
-              <div className="aspect-video w-full overflow-hidden rounded-3xl shadow-lg">
-                <img src={heroProduct.image} alt={heroProduct.name} className="h-full w-full object-cover" />
+              <div className="relative aspect-video w-full overflow-visible">
+                <img
+                  src={heroProduct.image}
+                  alt={heroProduct.name}
+                  className="absolute left-0 top-0 h-[130%] w-full rounded-3xl object-cover object-top shadow-lg"
+                />
               </div>
             ) : (
               <div className="aspect-video flex w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
