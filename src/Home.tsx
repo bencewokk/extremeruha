@@ -292,7 +292,7 @@ export default function Home() {
                 <img
                   src={heroProduct.image}
                   alt={heroProduct.name}
-                  className="absolute left-0 top-0 h-[130%] w-full rounded-3xl object-cover object-top shadow-lg"
+                  className="absolute left-0 top-0 h-[190%] w-full rounded-3xl object-cover object-top shadow-lg"
                 />
               </div>
             ) : (
