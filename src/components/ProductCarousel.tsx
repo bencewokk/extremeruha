@@ -15,6 +15,9 @@ type Props = {
 export default function ProductCarousel({ products }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const initializedRef = useRef(false)
+  const isDraggingRef = useRef(false)
+  const dragStartXRef = useRef(0)
+  const dragStartScrollLeftRef = useRef(0)
 
   // Repeat the list so users can keep scrolling manually without hitting a hard edge.
   const repeatedProducts = useMemo(() => {
@@ -65,8 +68,50 @@ export default function ProductCarousel({ products }: Props) {
     }
   }, [products])
 
+  useEffect(() => {
+    function handleWindowMouseUp() {
+      isDraggingRef.current = false
+    }
+
+    window.addEventListener('mouseup', handleWindowMouseUp)
+    return () => {
+      window.removeEventListener('mouseup', handleWindowMouseUp)
+    }
+  }, [])
+
+  function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    const el = scrollRef.current
+    if (!el) return
+
+    isDraggingRef.current = true
+    dragStartXRef.current = e.clientX
+    dragStartScrollLeftRef.current = el.scrollLeft
+    e.preventDefault()
+  }
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isDraggingRef.current) return
+    const el = scrollRef.current
+    if (!el) return
+
+    const delta = e.clientX - dragStartXRef.current
+    el.scrollLeft = dragStartScrollLeftRef.current - delta
+    e.preventDefault()
+  }
+
+  function handleMouseUpOrLeave() {
+    isDraggingRef.current = false
+  }
+
   return (
-    <div ref={scrollRef} className="overflow-x-auto">
+    <div
+      ref={scrollRef}
+      className="no-scrollbar overflow-x-auto cursor-grab active:cursor-grabbing select-none"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseLeave={handleMouseUpOrLeave}
+    >
       <div className="flex gap-4 px-6">
         {repeatedProducts.map((product, index) => {
           const key = `${product._id ?? product.id ?? product.name}-${index}`
