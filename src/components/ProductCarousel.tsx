@@ -156,7 +156,7 @@ export default function ProductCarousel({ products }: Props) {
             <article
               key={key}
               aria-hidden={i >= products.length}
-              className="flex-shrink-0 w-64 mx-3 rounded-2xl bg-white border border-rose-deep/10 overflow-hidden shadow-sm"
+              className="flex-shrink-0 w-64 mr-2 rounded-2xl bg-white border border-rose-deep/10 overflow-hidden shadow-sm"
             >
               <div className="aspect-[9/16] w-full overflow-hidden">
                 <img

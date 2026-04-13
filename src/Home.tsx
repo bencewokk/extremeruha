@@ -175,16 +175,22 @@ export default function Home() {
       </header>
 
       {/* Collection Grid */}
-      <section id="collection" className="mx-auto max-w-6xl px-6 py-12">
-        <h2 className="text-3xl font-cormorant text-rose-deep mb-6">The Collection</h2>
-        {productsError ? <p className="mb-4 text-sm text-gray-500">{productsError}</p> : null}
+      <section id="collection" className="py-12">
+        <div className="mx-auto max-w-6xl px-6 mb-6">
+          <h2 className="text-3xl font-cormorant text-rose-deep">The Collection</h2>
+          {productsError ? <p className="mt-2 text-sm text-gray-500">{productsError}</p> : null}
+        </div>
         {loadingProducts ? (
-          <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Loading collection…</div>
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Loading collection…</div>
+          </div>
         ) : products.length > 0 ? (
           <ProductCarousel products={products} />
         ) : (
-          <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
-            No products yet. Add items in Admin to show them here.
+          <div className="mx-auto max-w-6xl px-6">
+            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
+              No products yet. Add items in Admin to show them here.
+            </div>
           </div>
         )}
       </section>
