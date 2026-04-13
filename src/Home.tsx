@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { ADMIN_AUTH_EVENT, getAdminToken } from './admin/auth'
+import ProductCarousel from './components/ProductCarousel'
 
 type Product = {
   _id?: string
@@ -180,17 +181,7 @@ export default function Home() {
         {loadingProducts ? (
           <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Loading collection…</div>
         ) : products.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <article key={product._id ?? product.id ?? product.name} className="rounded-2xl bg-white border border-rose-deep/10 overflow-hidden shadow-sm">
-                <img src={product.image} alt={product.name} className="h-64 w-full object-cover" />
-                <div className="p-4">
-                  <h3 className="text-xl font-cormorant text-rose-deep">{product.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{product.style}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+          <ProductCarousel products={products} />
         ) : (
           <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
             No products yet. Add items in Admin to show them here.
