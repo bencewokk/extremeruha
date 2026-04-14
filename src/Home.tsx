@@ -13,23 +13,23 @@ type Product = {
   image: string
 }
 
-const reviewHighlights = [
-  {
-    value: '5.0',
-    label: 'Google ertekeles',
-    detail: 'Csendes, szemelyes szalonelmeny',
-  },
-  {
-    value: 'Privat',
-    label: 'Ruhaproba',
-    detail: 'Nyugodt figyelem minden idopontnal',
-  },
-  {
-    value: '90 perc',
-    label: 'Egy alkalom',
-    detail: 'Atgondolt, kenyelmes probafolyamat',
-  },
-]
+type GoogleReview = {
+  authorName: string
+  authorUrl: string
+  authorPhotoUrl: string
+  rating: number | null
+  relativeTimeDescription: string
+  text: string
+  publishTime: string
+}
+
+type GoogleReviewsPlace = {
+  name: string
+  address: string
+  googleMapsUri: string
+  rating: number | null
+  userRatingCount: number
+}
 
 function toDateInputValue(date: Date) {
   const year = date.getFullYear()
@@ -60,6 +60,22 @@ function formatSlotLabel(slotIso: string) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function formatReviewMeta(review: GoogleReview) {
+  if (review.relativeTimeDescription) return review.relativeTimeDescription
+  if (!review.publishTime) return 'Google review'
+
+  return new Date(review.publishTime).toLocaleDateString('hu-HU', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+function truncateReviewText(text: string, maxLength = 220) {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength).trim()}...`
 }
 
 function extractTags(style: string) {
@@ -155,6 +171,50 @@ function MailIcon() {
   )
 }
 
+function RatingStars({ rating, size = 'h-4 w-4' }: { rating: number | null, size?: string }) {
+  const filledStars = Math.max(0, Math.min(5, Math.round(rating || 0)))
+
+  return (
+    <div className="flex items-center gap-1 text-rose-deep">
+      {Array.from({ length: 5 }, (_, index) => (
+        <svg
+          key={index}
+          viewBox="0 0 24 24"
+          className={size}
+          fill={index < filledStars ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.6"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="m12 3.75 2.63 5.34 5.9.86-4.27 4.16 1.01 5.88L12 17.23 6.73 20l1.01-5.88-4.27-4.16 5.9-.86L12 3.75Z" />
+        </svg>
+      ))}
+    </div>
+  )
+}
+
+function ReviewAvatar({ name, photoUrl }: { name: string, photoUrl?: string }) {
+  const initial = name.trim().charAt(0).toUpperCase() || 'G'
+
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={name}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="h-11 w-11 rounded-full border border-rose-deep/10 object-cover"
+      />
+    )
+  }
+
+  return (
+    <span className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-rose-deep/10 bg-rose-deep/5 text-sm font-semibold text-rose-deep">
+      {initial}
+    </span>
+  )
+}
+
 export default function Home() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
   const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(new Date()))
@@ -169,6 +229,11 @@ export default function Home() {
   const [bookingMessage, setBookingMessage] = useState('')
   const [bookingError, setBookingError] = useState('')
   const [submittingBooking, setSubmittingBooking] = useState(false)
+  const [reviews, setReviews] = useState<GoogleReview[]>([])
+  const [reviewsPlace, setReviewsPlace] = useState<GoogleReviewsPlace | null>(null)
+  const [loadingReviews, setLoadingReviews] = useState(true)
+  const [reviewsError, setReviewsError] = useState('')
+  const [reviewsStale, setReviewsStale] = useState(false)
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -215,6 +280,44 @@ export default function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    let isActive = true
+
+    async function loadReviews() {
+      try {
+        const response = await fetch('/api/reviews')
+        const payload = await response.json().catch(() => ({}))
+
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Nem sikerult betolteni a Google velemenyeket.')
+        }
+
+        if (!isActive) return
+
+        setReviews(Array.isArray(payload?.reviews) ? payload.reviews : [])
+        setReviewsPlace(payload?.place || null)
+        setReviewsStale(Boolean(payload?.stale))
+        setReviewsError('')
+      } catch (error) {
+        if (!isActive) return
+
+        console.error('Failed to load Google reviews', error)
+        setReviews([])
+        setReviewsPlace(null)
+        setReviewsStale(false)
+        setReviewsError(error instanceof Error ? error.message : 'Nem sikerult betolteni a Google velemenyeket.')
+      } finally {
+        if (isActive) setLoadingReviews(false)
+      }
+    }
+
+    loadReviews()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
   const availableTags = useMemo(() => {
     const tags = new Set<string>()
 
@@ -244,6 +347,10 @@ export default function Home() {
       return activeTags.some((tag) => productTags.includes(tag))
     })
   }, [activeTags, products])
+
+  const visibleReviews = useMemo(() => {
+    return reviews.filter((review) => review.text.trim()).slice(0, 3)
+  }, [reviews])
 
   const heroProduct = products[0]
 
@@ -582,23 +689,98 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-4">
-        <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[1.15fr,1fr]">
+        <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[0.95fr,1.25fr]">
           <div>
             <SectionEyebrow>Google velemenyek</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep">Minimal, bizalmat epito visszajelzesek</h3>
-            <p className="mt-2 max-w-xl text-gray-600">A Google ertekeleseket eleg egy visszafogott blokkban megjeleniteni: rating, nehany rovid elony, es egy tiszta hivatkozas a teljes profilhoz.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {reviewHighlights.map((item) => (
-              <article key={item.label} className="rounded-2xl border border-rose-deep/10 bg-white px-4 py-5 text-center shadow-sm">
-                <div className="mb-3 flex justify-center text-rose-deep">
-                  <IconShell><StarIcon /></IconShell>
+            <h3 className="text-2xl font-cormorant text-rose-deep">Valos visszajelzesek a Google-bol</h3>
+            <p className="mt-2 max-w-xl text-gray-600">A szalon ertekeleseit es vendegvelemenyeit kozvetlenul a Google helyadatlaprol toltjuk be.</p>
+
+            {loadingReviews ? (
+              <div className="mt-6 animate-pulse space-y-3">
+                <div className="h-12 w-28 rounded-full bg-rose-deep/10" />
+                <div className="h-4 w-40 rounded-full bg-rose-deep/10" />
+                <div className="h-4 w-56 rounded-full bg-rose-deep/10" />
+              </div>
+            ) : reviewsPlace ? (
+              <div className="mt-6">
+                <div className="flex flex-wrap items-end gap-5">
+                  <div className="text-5xl leading-none font-cormorant text-rose-deep">
+                    {typeof reviewsPlace.rating === 'number' ? reviewsPlace.rating.toFixed(1) : '-'}
+                  </div>
+                  <div>
+                    <RatingStars rating={reviewsPlace.rating} />
+                    <p className="mt-2 text-sm text-gray-600">{reviewsPlace.userRatingCount.toLocaleString('hu-HU')} Google ertekeles</p>
+                    <p className="mt-1 text-sm text-gray-500">{reviewsPlace.name || 'Extreme Ruhaszalon'}</p>
+                  </div>
                 </div>
-                <div className="text-2xl font-semibold text-gray-800">{item.value}</div>
-                <div className="mt-1 text-xs uppercase tracking-[0.24em] text-rose-deep/70">{item.label}</div>
-                <p className="mt-3 text-sm leading-6 text-gray-600">{item.detail}</p>
+
+                {reviewsPlace.address ? <p className="mt-4 max-w-md text-sm text-gray-500">{reviewsPlace.address}</p> : null}
+                {reviewsStale ? <p className="mt-3 text-xs uppercase tracking-[0.22em] text-gray-400">Atmenetileg gyorsitotarazott ertekelesek</p> : null}
+                {reviewsPlace.googleMapsUri ? (
+                  <a
+                    href={reviewsPlace.googleMapsUri}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-5 inline-flex rounded-full border border-rose-deep/20 px-4 py-2 text-sm font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white"
+                  >
+                    Teljes Google profil
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-rose-deep/10 bg-white px-4 py-4 text-sm text-gray-600">
+                {reviewsError || 'A Google review kapcsolat hamarosan elerheto.'}
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {loadingReviews ? Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-2xl border border-rose-deep/10 bg-white px-5 py-5 shadow-sm animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-full bg-rose-deep/10" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-24 rounded-full bg-rose-deep/10" />
+                    <div className="h-3 w-16 rounded-full bg-rose-deep/10" />
+                  </div>
+                </div>
+                <div className="mt-4 h-3 w-28 rounded-full bg-rose-deep/10" />
+                <div className="mt-4 space-y-2">
+                  <div className="h-3 w-full rounded-full bg-rose-deep/10" />
+                  <div className="h-3 w-full rounded-full bg-rose-deep/10" />
+                  <div className="h-3 w-4/5 rounded-full bg-rose-deep/10" />
+                </div>
+              </div>
+            )) : visibleReviews.length > 0 ? visibleReviews.map((review) => (
+              <article key={`${review.authorName}-${review.publishTime}`} className="rounded-2xl border border-rose-deep/10 bg-white px-5 py-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <ReviewAvatar name={review.authorName} photoUrl={review.authorPhotoUrl} />
+                  <div className="min-w-0">
+                    {review.authorUrl ? (
+                      <a href={review.authorUrl} target="_blank" rel="noreferrer" className="font-semibold text-gray-800 transition hover:text-rose-deep">
+                        {review.authorName}
+                      </a>
+                    ) : (
+                      <p className="font-semibold text-gray-800">{review.authorName}</p>
+                    )}
+                    <p className="text-xs uppercase tracking-[0.22em] text-gray-400">{formatReviewMeta(review)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <RatingStars rating={review.rating} size="h-3.5 w-3.5" />
+                  <span className="text-xs text-gray-400">{typeof review.rating === 'number' ? `${review.rating.toFixed(1)}/5` : ''}</span>
+                </div>
+
+                <p className="mt-4 text-sm leading-6 text-gray-600">
+                  {review.text ? truncateReviewText(review.text) : 'A teljes velemeny a Google profilon olvashato.'}
+                </p>
               </article>
-            ))}
+            )) : (
+              <div className="rounded-2xl border border-rose-deep/10 bg-white px-4 py-5 text-sm text-gray-600 md:col-span-2 xl:col-span-3">
+                {reviewsError || 'A Google profilhoz meg nem erkezett megjelenitheto velemeny.'}
+              </div>
+            )}
           </div>
         </div>
       </section>

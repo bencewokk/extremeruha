@@ -52,6 +52,8 @@ function formatGoogleDate(value) {
 
 const APPOINTMENT_DURATION_MINUTES = 90
 const SLOT_STEP_MINUTES = 15
+const GOOGLE_REVIEWS_CACHE_TTL_MS = 30 * 60 * 1000
+let googleReviewsCache = { data: null, expiresAt: 0 }
 
 function rangesOverlap(startA, endA, startB, endB) {
   return startA < endB && startB < endA
@@ -121,6 +123,95 @@ function getCalendarClient() {
   const auth = new google.auth.OAuth2(clientId, clientSecret)
   auth.setCredentials({ refresh_token: refreshToken })
   return google.calendar({ version: 'v3', auth })
+}
+
+function getGoogleReviewsConfig() {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY
+  const placeId = process.env.GOOGLE_PLACE_ID
+  const languageCode = process.env.GOOGLE_PLACE_REVIEW_LANGUAGE || 'hu'
+
+  if (!apiKey || !placeId) {
+    return null
+  }
+
+  return { apiKey, placeId, languageCode }
+}
+
+function normalizeGooglePlaceResourceName(placeId) {
+  return placeId.startsWith('places/') ? placeId : `places/${placeId}`
+}
+
+function normalizeGoogleReview(review) {
+  return {
+    authorName: review?.authorAttribution?.displayName || 'Google felhasznalo',
+    authorUrl: review?.authorAttribution?.uri || '',
+    authorPhotoUrl: review?.authorAttribution?.photoUri || '',
+    rating: typeof review?.rating === 'number' ? review.rating : null,
+    relativeTimeDescription: review?.relativePublishTimeDescription || '',
+    text: review?.originalText?.text || review?.text?.text || '',
+    publishTime: review?.publishTime || '',
+  }
+}
+
+async function fetchGooglePlaceReviews() {
+  const config = getGoogleReviewsConfig()
+  if (!config) {
+    throw new Error('Google reviews are not configured on the server')
+  }
+
+  const endpoint = new URL(`https://places.googleapis.com/v1/${normalizeGooglePlaceResourceName(config.placeId)}`)
+  endpoint.searchParams.set('languageCode', config.languageCode)
+
+  const response = await fetch(endpoint, {
+    headers: {
+      'X-Goog-Api-Key': config.apiKey,
+      'X-Goog-FieldMask': 'displayName,formattedAddress,googleMapsUri,rating,userRatingCount,reviews',
+    },
+  })
+
+  const payload = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || 'Google Places API request failed')
+  }
+
+  return {
+    place: {
+      name: payload?.displayName?.text || '',
+      address: payload?.formattedAddress || '',
+      googleMapsUri: payload?.googleMapsUri || '',
+      rating: typeof payload?.rating === 'number' ? payload.rating : null,
+      userRatingCount: typeof payload?.userRatingCount === 'number' ? payload.userRatingCount : 0,
+    },
+    reviews: Array.isArray(payload?.reviews)
+      ? payload.reviews.map((review) => normalizeGoogleReview(review)).filter((review) => review.authorName || review.text)
+      : [],
+    fetchedAt: new Date().toISOString(),
+  }
+}
+
+async function getCachedGooglePlaceReviews() {
+  const now = Date.now()
+
+  if (googleReviewsCache.data && googleReviewsCache.expiresAt > now) {
+    return { ...googleReviewsCache.data, stale: false }
+  }
+
+  try {
+    const data = await fetchGooglePlaceReviews()
+    googleReviewsCache = {
+      data,
+      expiresAt: now + GOOGLE_REVIEWS_CACHE_TTL_MS,
+    }
+
+    return { ...data, stale: false }
+  } catch (error) {
+    if (googleReviewsCache.data) {
+      return { ...googleReviewsCache.data, stale: true }
+    }
+
+    throw error
+  }
 }
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME
@@ -237,6 +328,20 @@ app.get('/api/products', async (req, res) => {
   } catch (err) {
     enableInMemoryProducts(err)
     res.json(inMemoryProducts)
+  }
+})
+
+app.get('/api/reviews', async (req, res) => {
+  if (!getGoogleReviewsConfig()) {
+    return res.status(503).json({ error: 'A Google velemenyek nincsenek beallitva a szerveren' })
+  }
+
+  try {
+    const payload = await getCachedGooglePlaceReviews()
+    return res.json(payload)
+  } catch (error) {
+    console.error('Google reviews fetch failed', error)
+    return res.status(502).json({ error: 'Nem sikerult betolteni a Google velemenyeket a Google Places API-bol' })
   }
 })
 
