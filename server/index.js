@@ -172,7 +172,9 @@ async function fetchGooglePlaceReviews() {
   const payload = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(payload?.error?.message || 'Google Places API request failed')
+    const googleDetail = payload?.error?.message || payload?.error?.status || JSON.stringify(payload).slice(0, 400)
+    console.error(`Google Places API error ${response.status}:`, googleDetail)
+    throw new Error(`Google Places API ${response.status}: ${googleDetail}`)
   }
 
   return {
@@ -341,7 +343,10 @@ app.get('/api/reviews', async (req, res) => {
     return res.json(payload)
   } catch (error) {
     console.error('Google reviews fetch failed', error)
-    return res.status(502).json({ error: 'Nem sikerult betolteni a Google velemenyeket a Google Places API-bol' })
+    const detail = error?.message || 'ismeretlen hiba'
+    return res.status(502).json({
+      error: `Nem sikerult betolteni a Google velemenyeket: ${detail}`,
+    })
   }
 })
 
