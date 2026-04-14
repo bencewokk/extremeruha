@@ -119,15 +119,17 @@ export default function ProductCarousel({ products }: Props) {
             <article
               key={key}
               aria-hidden={index < products.length || index >= products.length * 2 ? true : undefined}
-              className="w-[220px] flex-shrink-0 rounded-2xl bg-white border border-rose-deep/10 overflow-hidden shadow-sm"
+              className="motif-panel group w-[220px] flex-shrink-0 rounded-[28px] overflow-hidden shadow-sm transition-transform duration-300 hover:-translate-y-1"
             >
-              <div className="aspect-[9/16] w-full overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-transparent via-rose-deep/35 to-transparent" />
+              <div className="relative aspect-[9/16] w-full overflow-hidden">
                 <img
                   src={product.image}
                   alt={product.name}
                   draggable={false}
-                  className="h-full w-full object-cover pointer-events-none"
+                  className="h-full w-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-[1.02]"
                 />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/45 to-transparent" />
               </div>
               <div className="p-4">
                 <h3 className="text-xl font-cormorant text-rose-deep">{product.name}</h3>

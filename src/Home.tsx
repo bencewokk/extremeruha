@@ -51,6 +51,33 @@ function extractTags(style: string) {
     .filter(Boolean)
 }
 
+function SectionEyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-rose-deep/70">
+      <span className="h-px w-10 bg-rose-deep/30" />
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function MotifBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-rose-deep/15 bg-white/80 px-3 py-1 text-xs font-semibold text-rose-deep shadow-sm backdrop-blur">
+      {children}
+    </span>
+  )
+}
+
+function SectionDivider() {
+  return (
+    <div className="flex items-center gap-4 py-8">
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose-deep/30 to-transparent" />
+      <span className="h-2 w-2 rotate-45 border border-rose-deep/40 bg-ivory shadow-sm" />
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose-deep/30 to-transparent" />
+    </div>
+  )
+}
+
 export default function Home() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
   const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(new Date()))
@@ -263,7 +290,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen font-jost text-gray-800 bg-ivory">
+    <div className="min-h-screen font-jost text-gray-800 overflow-x-hidden">
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-white/60 backdrop-blur border-b border-rose-deep/10">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
@@ -288,12 +315,19 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="order-2 lg:order-1 mb-[50.625%]">
             {heroProduct ? (
-              <div className="relative aspect-video w-full overflow-visible">
-                <img
-                  src={heroProduct.image}
-                  alt={heroProduct.name}
-                  className="absolute left-0 top-0 h-[190%] w-full rounded-3xl object-cover object-top shadow-lg"
-                />
+              <div className="relative isolate">
+                <div className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-rose/15 blur-3xl" />
+                <div className="pointer-events-none absolute -right-8 bottom-8 h-24 w-24 rounded-full border border-rose-deep/20" />
+                <div className="relative aspect-video w-full overflow-visible">
+                  <img
+                    src={heroProduct.image}
+                    alt={heroProduct.name}
+                    className="absolute left-0 top-0 h-[190%] w-full rounded-[2rem] object-cover object-top shadow-lg ring-1 ring-white/60"
+                  />
+                </div>
+                <div className="pointer-events-none absolute -bottom-4 left-8 hidden rounded-full border border-rose-deep/10 bg-white/85 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-rose-deep shadow-sm backdrop-blur md:block">
+                  Atelier selection
+                </div>
               </div>
             ) : (
               <div className="aspect-video flex w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
@@ -302,8 +336,14 @@ export default function Home() {
             )}
           </div>
           <div className="order-1 lg:order-2">
+            <SectionEyebrow>Atelier bridal salon</SectionEyebrow>
             <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Exkluziv menyasszonyi kollekcio az <span className="italic">orok</span> pillanatokhoz</h1>
             <p className="text-lg text-gray-600 mb-6">Finom vonalvezetes, modern szabvonalak es idotallo elegancia. Minden ruhat gondosan valogatunk, hogy kulonleges legyen a nagy napod.</p>
+            <div className="mb-8 flex flex-wrap gap-3">
+              <MotifBadge>Privat proba</MotifBadge>
+              <MotifBadge>Szemelyre szabott stilus</MotifBadge>
+              <MotifBadge>Nyugodt hangulat</MotifBadge>
+            </div>
             <div className="flex gap-4">
               <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
               <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Proba foglalasa</a>
@@ -312,10 +352,16 @@ export default function Home() {
         </div>
       </header>
 
+      <div className="mx-auto max-w-6xl px-6">
+        <SectionDivider />
+      </div>
+
       {/* Collection Grid */}
       <section id="collection" className="py-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
+          <SectionEyebrow>Valogatott darabok</SectionEyebrow>
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
+          <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturalt szabasok es idotallo elegancia minden darabban.</p>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -350,7 +396,7 @@ export default function Home() {
           <ProductCarousel products={filteredProducts} />
         ) : (
           <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">
+            <div className="motif-panel rounded-[28px] p-6 text-gray-500">
               {products.length > 0 ? 'Nincs a kijelolt cimkeknek megfelelo ruha.' : 'Meg nincs feltoltott ruha. Add hozza az Admin feluleten.'}
             </div>
           </div>
@@ -359,15 +405,21 @@ export default function Home() {
 
       {/* Booking Banner */}
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-2xl bg-white border border-rose-deep/10 p-6">
+        <div className="motif-panel grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-[32px] p-6 lg:p-8">
           <div>
+            <SectionEyebrow>Idopontfoglalas</SectionEyebrow>
             <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Szemelyre szabott ruhaproba, nyugodt kornyezetben</h3>
             <p className="text-gray-600">Foglalj privat idopontot, es stylistjaink segitenek megtalalni a hozzad leginkabb illo ruhat.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <MotifBadge>90 perces proba</MotifBadge>
+              <MotifBadge>Stylist tanacsadas</MotifBadge>
+              <MotifBadge>Google naptar szinkron</MotifBadge>
+            </div>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes nev" className="border rounded px-3 py-2 w-full" required />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cim" className="border rounded px-3 py-2 w-full" required />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes nev" className="elegant-field" required />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cim" className="elegant-field" required />
             </div>
             <div>
               <input
@@ -376,7 +428,7 @@ export default function Home() {
                 onChange={handleChange}
                 type="tel"
                 placeholder="Telefonszam"
-                className="border rounded px-3 py-2 w-full"
+                className="elegant-field"
                 required
               />
             </div>
@@ -386,7 +438,7 @@ export default function Home() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="border rounded px-3 py-2 w-full"
+                className="elegant-field"
                 required
               />
             </div>
@@ -418,7 +470,7 @@ export default function Home() {
               <p className="mt-2 text-xs text-gray-500">Az idopontok a Google Naptarbol erkeznek, 90 percesek, es 15 percenkent indulnak.</p>
             </div>
             <div>
-              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzes (stilus, meret, egyeb)" className="border rounded px-3 py-2 w-full h-24" />
+              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzes (stilus, meret, egyeb)" className="elegant-field h-24 resize-y" />
             </div>
             {bookingError ? <p className="text-sm text-red-600">{bookingError}</p> : null}
             {bookingMessage ? <p className="text-sm text-green-700">{bookingMessage}</p> : null}
@@ -432,11 +484,17 @@ export default function Home() {
       {/* Visit Us */}
       <section id="visit" className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          <div className="rounded-2xl bg-white border border-rose-deep/10 p-6 shadow-sm">
+          <div className="motif-panel rounded-[32px] p-6">
+            <SectionEyebrow>Latogatas</SectionEyebrow>
             <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Latogass el az extremeruha szalonba</h3>
             <p className="text-gray-600 mb-5">
               Szalonunk a belvarosban var, privat probafulkekkel es szemelyes tanacsadassal.
             </p>
+
+            <div className="mb-5 flex flex-wrap gap-3">
+              <MotifBadge>Miskolc belvaros</MotifBadge>
+              <MotifBadge>Privat probafulkek</MotifBadge>
+            </div>
 
             <div className="space-y-3 text-gray-700">
               <p><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</p>
@@ -453,7 +511,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-rose-deep/10 shadow-sm min-h-[360px]">
+          <div className="motif-panel overflow-hidden rounded-[32px] min-h-[360px]">
             <iframe
               title="Bridal Bloom on Google Maps"
               src="https://www.google.com/maps?q=Extreme+Ruhaszalon+Miskolc&output=embed"
