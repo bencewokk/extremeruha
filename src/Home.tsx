@@ -13,6 +13,24 @@ type Product = {
   image: string
 }
 
+const reviewHighlights = [
+  {
+    value: '5.0',
+    label: 'Google ertekeles',
+    detail: 'Csendes, szemelyes szalonelmeny',
+  },
+  {
+    value: 'Privat',
+    label: 'Ruhaproba',
+    detail: 'Nyugodt figyelem minden idopontnal',
+  },
+  {
+    value: '90 perc',
+    label: 'Egy alkalom',
+    detail: 'Atgondolt, kenyelmes probafolyamat',
+  },
+]
+
 function toDateInputValue(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -75,6 +93,65 @@ function SectionDivider() {
       <span className="h-2 w-2 rotate-45 border border-rose-deep/40 bg-ivory shadow-sm" />
       <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose-deep/30 to-transparent" />
     </div>
+  )
+}
+
+function IconShell({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-deep/15 bg-white/80 text-rose-deep shadow-sm">
+      {children}
+    </span>
+  )
+}
+
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m12 3.75 2.63 5.34 5.9.86-4.27 4.16 1.01 5.88L12 17.23 6.73 20l1.01-5.88-4.27-4.16 5.9-.86L12 3.75Z" />
+    </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 2.75v3.5M16 2.75v3.5M3.75 9.25h16.5M5.75 5.25h12.5a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5.75a2 2 0 0 1-2-2V7.25a2 2 0 0 1 2-2Z" />
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.25a7.75 7.75 0 1 1 0 15.5 7.75 7.75 0 0 1 0-15.5Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.5v4l2.75 1.75" />
+    </svg>
+  )
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25s5.25-5.26 5.25-10.03a5.25 5.25 0 1 0-10.5 0c0 4.77 5.25 10.03 5.25 10.03Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.25a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+    </svg>
+  )
+}
+
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.98 4.75h2.13c.36 0 .68.24.77.58l.72 2.88a.8.8 0 0 1-.2.76l-1.31 1.32a12.7 12.7 0 0 0 4.62 4.62l1.32-1.31a.8.8 0 0 1 .76-.2l2.88.72c.34.09.58.41.58.77v2.13c0 .44-.36.8-.8.8h-1.2C9.97 19.82 4.18 14.03 4.18 6.35v-1.2c0-.44.36-.8.8-.8Z" />
+    </svg>
+  )
+}
+
+function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.75 6.25h14.5a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H4.75a1.5 1.5 0 0 1-1.5-1.5v-8.5a1.5 1.5 0 0 1 1.5-1.5Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="m4 7 8 6 8-6" />
+    </svg>
   )
 }
 
@@ -415,6 +492,26 @@ export default function Home() {
               <MotifBadge>Stylist tanacsadas</MotifBadge>
               <MotifBadge>Google naptar szinkron</MotifBadge>
             </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
+                <div className="mb-2 flex items-center gap-2 text-rose-deep">
+                  <IconShell><ClockIcon /></IconShell>
+                </div>
+                90 perc nyugodt, privat probara.
+              </div>
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
+                <div className="mb-2 flex items-center gap-2 text-rose-deep">
+                  <IconShell><CalendarIcon /></IconShell>
+                </div>
+                Azonnali visszaigazolas Google Naptarral.
+              </div>
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
+                <div className="mb-2 flex items-center gap-2 text-rose-deep">
+                  <IconShell><StarIcon /></IconShell>
+                </div>
+                Szemelyes figyelem minden menyasszonynak.
+              </div>
+            </div>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -477,7 +574,32 @@ export default function Home() {
             <div className="flex justify-end">
               <button type="submit" disabled={submittingBooking || !form.startDateTime} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Foglalas folyamatban…' : 'Idopont foglalasa'}</button>
             </div>
+            <p className="border-t border-rose-deep/10 pt-3 text-xs uppercase tracking-[0.22em] text-gray-500">
+              Privat idopont • Google visszaigazolas • 5 csillagos elmeny
+            </p>
           </form>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-4">
+        <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[1.15fr,1fr]">
+          <div>
+            <SectionEyebrow>Google velemenyek</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep">Minimal, bizalmat epito visszajelzesek</h3>
+            <p className="mt-2 max-w-xl text-gray-600">A Google ertekeleseket eleg egy visszafogott blokkban megjeleniteni: rating, nehany rovid elony, es egy tiszta hivatkozas a teljes profilhoz.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {reviewHighlights.map((item) => (
+              <article key={item.label} className="rounded-2xl border border-rose-deep/10 bg-white px-4 py-5 text-center shadow-sm">
+                <div className="mb-3 flex justify-center text-rose-deep">
+                  <IconShell><StarIcon /></IconShell>
+                </div>
+                <div className="text-2xl font-semibold text-gray-800">{item.value}</div>
+                <div className="mt-1 text-xs uppercase tracking-[0.24em] text-rose-deep/70">{item.label}</div>
+                <p className="mt-3 text-sm leading-6 text-gray-600">{item.detail}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -497,14 +619,14 @@ export default function Home() {
             </div>
 
             <div className="space-y-3 text-gray-700">
-              <p><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</p>
-              <p><span className="font-semibold text-rose-deep">Cim:</span> Munkacsy utca, 3530 Miskolc, Magyarorszag</p>
-              <p><span className="font-semibold text-rose-deep">Telefon:</span> +36 1 555 0137</p>
-              <p><span className="font-semibold text-rose-deep">Email:</span> hello@extremeruha.hu</p>
+              <p className="flex items-center gap-3"><IconShell><StarIcon /></IconShell><span><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</span></p>
+              <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cim:</span> Munkacsy utca, 3530 Miskolc, Magyarorszag</span></p>
+              <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> +36 1 555 0137</span></p>
+              <p className="flex items-center gap-3"><IconShell><MailIcon /></IconShell><span><span className="font-semibold text-rose-deep">Email:</span> hello@extremeruha.hu</span></p>
             </div>
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
-              <p className="font-semibold text-rose-deep mb-1">Nyitvatartas</p>
+              <p className="mb-3 flex items-center gap-3 font-semibold text-rose-deep"><IconShell><ClockIcon /></IconShell><span>Nyitvatartas</span></p>
               <p>Hetfo-Pentek: 10:00 - 19:00</p>
               <p>Szombat: 10:00 - 16:00</p>
               <p>Vasarnap: Elore egyeztetett idopontban</p>
