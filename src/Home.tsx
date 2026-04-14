@@ -349,7 +349,7 @@ export default function Home() {
   }, [activeTags, products])
 
   const visibleReviews = useMemo(() => {
-    return reviews.filter((review) => review.text.trim()).slice(0, 3)
+    return reviews.filter((review) => review.text.trim() && review.rating === 5).slice(0, 3)
   }, [reviews])
 
   const heroProduct = products[0]
