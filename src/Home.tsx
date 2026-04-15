@@ -649,15 +649,7 @@ export default function Home() {
       <nav className="sticky top-0 z-40 bg-white/60 backdrop-blur border-b border-rose-deep/10">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/" className="inline-flex items-center gap-3">
-              <img
-                src="/logo.png"
-                alt="extremeruha logo"
-                className="h-11 w-11 rounded-xl bg-white/80 p-1 object-contain ring-1 ring-rose-deep/20"
-                loading="eager"
-              />
-              <span className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</span>
-            </a>
+            <div className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</div>
             <div className="hidden md:flex gap-6 text-gray-600">
               <a className="hover:text-rose-deep" href="#collection">Kollekcio</a>
               <a className="hover:text-rose-deep" href="#services">Szolgaltatasok</a>
