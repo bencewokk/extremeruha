@@ -86,7 +86,7 @@ function extractTags(style: string) {
 }
 
 const SEO_TITLE = 'extremeruha | Menyasszonyi ruhaszalon'
-const SEO_DESCRIPTION = 'Extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban: privat ruhaproba, kolcsonzes, ertekesites, igazitas es kiegeszitok.'
+const SEO_DESCRIPTION = 'Extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban: privát ruhapróba, kölcsönzés, értékesítés, igazítás és kiegészítők.'
 const SITE_URL = 'https://extremeruha.hu'
 const LOGO_URL = `${SITE_URL}/logo.png`
 const FACEBOOK_URL = 'https://www.facebook.com/Menyasszonyi/?locale=hu_HU'
@@ -94,7 +94,7 @@ const BUSINESS_PHONE_E164 = '+36706138891'
 const BUSINESS_PHONE_DISPLAY = '06 70 613 8891'
 const BUSINESS_NAME = 'extremeruha'
 const BUSINESS_CITY = 'Miskolc'
-const BUSINESS_STREET_ADDRESS = 'Szechenyi u. 78, Metropol'
+const BUSINESS_STREET_ADDRESS = 'Széchenyi u. 78, Metropol'
 const BUSINESS_POSTAL_CODE = '3530'
 const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
 
@@ -279,7 +279,7 @@ export default function Home() {
 
         console.error('Failed to load homepage products', err)
         setProducts([])
-        setProductsError('A kollekcio jelenleg nem elerheto.')
+        setProductsError('A kollekció jelenleg nem elérhető.')
       } finally {
         if (isActive) setLoadingProducts(false)
       }
@@ -301,7 +301,7 @@ export default function Home() {
         const payload = await response.json().catch(() => ({}))
 
         if (!response.ok) {
-          throw new Error(payload?.error || 'Nem sikerult betolteni a Google velemenyeket.')
+          throw new Error(payload?.error || 'Nem sikerült betölteni a Google véleményeket.')
         }
 
         if (!isActive) return
@@ -317,7 +317,7 @@ export default function Home() {
         setReviews([])
         setReviewsPlace(null)
         setReviewsStale(false)
-        setReviewsError(error instanceof Error ? error.message : 'Nem sikerult betolteni a Google velemenyeket.')
+        setReviewsError(error instanceof Error ? error.message : 'Nem sikerült betölteni a Google véleményeket.')
       } finally {
         if (isActive) setLoadingReviews(false)
       }
@@ -462,28 +462,28 @@ export default function Home() {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Menyasszonyi ruha kolcsonzes Miskolc',
+            name: 'Menyasszonyi ruha kölcsönzés Miskolc',
           },
         },
         {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Menyasszonyi ruha ertekesites Miskolc',
+            name: 'Menyasszonyi ruha értékesítés Miskolc',
           },
         },
         {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Menyasszonyi ruha igazitas es meretre keszites Miskolc',
+            name: 'Menyasszonyi ruha igazítás és méretre készítés Miskolc',
           },
         },
         {
           '@type': 'Offer',
           itemOffered: {
             '@type': 'Service',
-            name: 'Menyasszonyi kiegeszitok Miskolc',
+            name: 'Menyasszonyi kiegészítők Miskolc',
           },
         },
       ],
@@ -526,7 +526,7 @@ export default function Home() {
       const payload = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'Nem sikerult betolteni az idopontokat')
+        throw new Error(payload?.error || 'Nem sikerült betölteni az időpontokat')
       }
 
       const slots = Array.isArray(payload?.slots) ? payload.slots : []
@@ -540,7 +540,7 @@ export default function Home() {
     } catch (error) {
       console.error('Availability request failed', error)
       setAvailableSlots([])
-      setAvailabilityError(error instanceof Error ? error.message : 'Nem sikerult betolteni az idopontokat')
+      setAvailabilityError(error instanceof Error ? error.message : 'Nem sikerült betölteni az időpontokat')
       setForm((s) => ({ ...s, startDateTime: '' }))
     } finally {
       setLoadingAvailability(false)
@@ -558,13 +558,13 @@ export default function Home() {
     setBookingMessage('')
 
     if (!form.name || !form.email || !form.phone || !form.startDateTime) {
-      setBookingError('Kerlek add meg a nevedet, email-cimedet, telefonszamodat es valassz idopontot.')
+      setBookingError('Kérlek add meg a nevedet, email-címedet, telefonszámodat és válassz időpontot.')
       return
     }
 
     const start = new Date(form.startDateTime)
     if (Number.isNaN(start.getTime())) {
-      setBookingError('Ervenytelen idopont.')
+      setBookingError('Érvénytelen időpont.')
       return
     }
 
@@ -590,11 +590,11 @@ export default function Home() {
       if (!response.ok) {
         if (payload?.fallbackUrl) {
           window.open(payload.fallbackUrl, '_blank')
-          setBookingMessage('A naptar API most nem elerheto, ezert egy elore kitoltott Google Naptar oldalt nyitottunk meg.')
+          setBookingMessage('A naptár API most nem elérhető, ezért egy előre kitöltött Google Naptár oldalt nyitottunk meg.')
           return
         }
 
-        setBookingError(payload?.error || 'A foglalas most nem sikerult. Kerlek probald ujra.')
+        setBookingError(payload?.error || 'A foglalás most nem sikerült. Kérlek próbáld újra.')
         return
       }
 
@@ -608,7 +608,7 @@ export default function Home() {
       return
     } catch (error) {
       console.error('Booking request failed', error)
-      setBookingError('Nem sikerult kapcsolodni a foglalasi szolgaltatashoz. Kerlek probald ujra.')
+      setBookingError('Nem sikerült kapcsolódni a foglalási szolgáltatáshoz. Kérlek próbáld újra.')
     } finally {
       setSubmittingBooking(false)
     }
@@ -622,16 +622,16 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</div>
             <div className="hidden md:flex gap-6 text-gray-600">
-              <a className="hover:text-rose-deep" href="#collection">Kollekcio</a>
-              <a className="hover:text-rose-deep" href="#services">Szolgaltatasok</a>
-              <a className="hover:text-rose-deep" href="#booking">Idopontfoglalas</a>
-              <a className="hover:text-rose-deep" href="#visit">Latogatas</a>
+              <a className="hover:text-rose-deep" href="#collection">Kollekció</a>
+              <a className="hover:text-rose-deep" href="#services">Szolgáltatások</a>
+              <a className="hover:text-rose-deep" href="#booking">Időpontfoglalás</a>
+              <a className="hover:text-rose-deep" href="#visit">Látogatás</a>
               <a className="hover:text-rose-deep" href="#contact">Kapcsolat</a>
               {isAdminLoggedIn ? <a className="hover:text-rose-deep" href="/admin">Admin</a> : null}
             </div>
           </div>
           <div>
-            <a href="#booking" className="inline-flex items-center rounded-full bg-rose-deep px-4 py-2 text-white text-sm font-semibold shadow">Idopontfoglalas</a>
+            <a href="#booking" className="inline-flex items-center rounded-full bg-rose-deep px-4 py-2 text-white text-sm font-semibold shadow">Időpontfoglalás</a>
           </div>
         </div>
       </nav>
@@ -639,22 +639,22 @@ export default function Home() {
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 py-12">
         <div className="motif-panel rounded-[32px] p-6 lg:p-8">
-          <SectionEyebrow>Rolam</SectionEyebrow>
-          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">13 eves korom ota szabok, varrok es tervezek</h1>
+          <SectionEyebrow>Rólam</SectionEyebrow>
+          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">13 éves korom óta szabok, varrok és tervezek</h1>
           <p className="text-lg text-gray-600 mb-4">
-            A szakma szeretetet dedimtol tanultam. Munkam a hobbim, ezert orommel segitek megvalositani almaid ruhajat, akar sajat elkepzeles, akar kozos tervezes alapjan.
+            A szakma szeretetét dédimtől tanultam. Munkám a hobbim, ezért örömmel segítek megvalósítani álmaid ruháját, akár saját elképzelés, akár közös tervezés alapján.
           </p>
           <p className="text-lg text-gray-600 mb-6">
-            25 eve mukodo uzletunkben tapasztalt szakertokkel, szeretettel varunk ruhaprobara, hogy a nagy napon igazan kulonleges lehess.
+            25 éve működő üzletünkben tapasztalt szakértőkkel, szeretettel várunk ruhapróbára, hogy a nagy napon igazán különleges lehess.
           </p>
           <div className="mb-8 flex flex-wrap gap-3">
-            <MotifBadge>25 eve mukodo uzlet</MotifBadge>
-            <MotifBadge>Szemelyes tervezes</MotifBadge>
-            <MotifBadge>Privat ruhaproba</MotifBadge>
+            <MotifBadge>25 éve működő üzlet</MotifBadge>
+            <MotifBadge>Személyes tervezés</MotifBadge>
+            <MotifBadge>Privát ruhapróba</MotifBadge>
           </div>
           <div className="flex flex-wrap gap-4">
-            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
-            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Proba foglalasa</a>
+            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekció megnézése</a>
+            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Próba foglalása</a>
           </div>
         </div>
       </header>
@@ -662,20 +662,20 @@ export default function Home() {
       {/* Collection Grid */}
       <section id="collection" className="pb-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
-          <SectionEyebrow>Valogatott darabok</SectionEyebrow>
-          <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
-          <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturalt szabasok es idotallo elegancia minden darabban.</p>
+          <SectionEyebrow>Válogatott darabok</SectionEyebrow>
+          <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekció</h2>
+          <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturált szabások és időtálló elegancia minden darabban.</p>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-            Az extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban olyan menyasszonyoknak valogat kollekciot, akik egyszerre keresnek elegans megjelenest, kenyelmes viseletet es szemelyes tanacsadast. A ruhak kulonbozo sziluettekben, anyagokkal es stilusjegyekkel erhetok el, es a valasztast kolcsonzesi, ertekesitesi es igazitasi opciokkal is tamogatjuk.
+            Az extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban olyan menyasszonyoknak válogat kollekciót, akik egyszerre keresnek elegáns megjelenést, kényelmes viseletet és személyes tanácsadást. A ruhák különböző sziluettekben, anyagokkal és stílusjegyekkel érhetők el, és a választást kölcsönzési, értékesítési és igazítási opciókkal is támogatjuk.
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-600">
-            <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekcio oldal</a>
-            <a href="/ruhaproba.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ruhaproba reszletei</a>
-            <a href="/kapcsolat.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kapcsolat es nyitvatartas</a>
-            <a href="/kolcsonzes.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kolcsonzes</a>
-            <a href="/ertekesites.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ertekesites</a>
-            <a href="/igazitas.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Igazitas</a>
-            <a href="/kiegeszitok.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kiegeszitok</a>
+            <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekció oldal</a>
+            <a href="/ruhaproba.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ruhapróba részletei</a>
+            <a href="/kapcsolat.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kapcsolat és nyitvatartás</a>
+            <a href="/kolcsonzes.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kölcsönzés</a>
+            <a href="/ertekesites.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Értékesítés</a>
+            <a href="/igazitas.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Igazítás</a>
+            <a href="/kiegeszitok.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kiegészítők</a>
           </div>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -684,7 +684,7 @@ export default function Home() {
                 onClick={() => setActiveTags([])}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${activeTags.length === 0 ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
               >
-                Osszes
+                Összes
               </button>
               {availableTags.map((tag) => {
                 const active = activeTags.includes(tag)
@@ -705,14 +705,14 @@ export default function Home() {
         </div>
         {loadingProducts ? (
           <div className="mx-auto max-w-6xl px-6">
-            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Kollekcio betoltese…</div>
+            <div className="rounded-2xl border border-rose-deep/10 bg-white p-6 text-gray-500">Kollekció betöltése…</div>
           </div>
         ) : filteredProducts.length > 0 ? (
           <ProductCarousel products={filteredProducts} />
         ) : (
           <div className="mx-auto max-w-6xl px-6">
             <div className="motif-panel rounded-[28px] p-6 text-gray-500">
-              {products.length > 0 ? 'Nincs a kijelolt cimkeknek megfelelo ruha.' : 'Meg nincs feltoltott ruha. Add hozza az Admin feluleten.'}
+              {products.length > 0 ? 'Nincs a kijelölt címkéknek megfelelő ruha.' : 'Még nincs feltöltött ruha. Add hozzá az Admin felületen.'}
             </div>
           </div>
         )}
@@ -722,39 +722,39 @@ export default function Home() {
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
         <div className="motif-panel grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-[32px] p-6 lg:p-8">
           <div>
-            <SectionEyebrow>Tajekoztatas ruhaproba utan</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Ruhaproba 90 perces, privat idopontban</h3>
-            <p className="text-gray-600">A ruhaproba 90 perces, elore foglalt, privat idopontban tortenik, ezert kerjuk, pontosan erkezz.</p>
+            <SectionEyebrow>Tájékoztatás ruhapróba után</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Ruhapróba 90 perces, privát időpontban</h3>
+            <p className="text-gray-600">A ruhapróba 90 perces, előre foglalt, privát időpontban történik, ezért kérjük, pontosan érkezz.</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <MotifBadge>90 perces proba</MotifBadge>
-              <MotifBadge>Kenyelmes cipo javasolt</MotifBadge>
-              <MotifBadge>Inspiracios kepek hasznosak</MotifBadge>
+              <MotifBadge>90 perces próba</MotifBadge>
+              <MotifBadge>Kényelmes cipő javasolt</MotifBadge>
+              <MotifBadge>Inspirációs képek hasznosak</MotifBadge>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><ClockIcon /></IconShell>
                 </div>
-                Erkezz pontosan a nyugodt, privat probara.
+                Érkezz pontosan a nyugodt, privát próbára.
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><CalendarIcon /></IconShell>
                 </div>
-                Hozz kenyelmes cipot es inspiracios kepeket.
+                Hozz kényelmes cipőt és inspirációs képeket.
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><StarIcon /></IconShell>
                 </div>
-                Egy kozeli hozzatartozo vagy baratno elkiserhet.
+                Egy közeli hozzátartozó vagy barátnő elkísérhet.
               </div>
             </div>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes nev" className="elegant-field" required />
-              <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cim" className="elegant-field" required />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes név" className="elegant-field" required />
+              <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cím" className="elegant-field" required />
             </div>
             <div>
               <input
@@ -762,13 +762,13 @@ export default function Home() {
                 value={form.phone}
                 onChange={handleChange}
                 type="tel"
-                placeholder="Telefonszam"
+                placeholder="Telefonszám"
                 className="elegant-field"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Datum valasztasa</label>
+              <label className="block text-sm text-gray-700 mb-1">Dátum választása</label>
               <input
                 type="date"
                 value={selectedDate}
@@ -778,13 +778,13 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Elerheto kezdesi idopontok</label>
+              <label className="block text-sm text-gray-700 mb-1">Elérhető kezdési időpontok</label>
               {loadingAvailability ? (
-                <p className="text-sm text-gray-500">Szabad idopontok betoltese...</p>
+                <p className="text-sm text-gray-500">Szabad időpontok betöltése...</p>
               ) : availabilityError ? (
                 <p className="text-sm text-red-600">{availabilityError}</p>
               ) : availableSlots.length === 0 ? (
-                <p className="text-sm text-gray-500">Erre a napra nincs szabad idopont.</p>
+                <p className="text-sm text-gray-500">Erre a napra nincs szabad időpont.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {availableSlots.map((slot) => {
@@ -802,18 +802,18 @@ export default function Home() {
                   })}
                 </div>
               )}
-              <p className="mt-2 text-xs text-gray-500">Az idopontok a Google Naptarbol erkeznek, 90 percesek, es 15 percenkent indulnak.</p>
+              <p className="mt-2 text-xs text-gray-500">Az időpontok a Google Naptárból érkeznek, 90 percesek, és 15 percenként indulnak.</p>
             </div>
             <div>
-              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzes (stilus, meret, egyeb)" className="elegant-field h-24 resize-y" />
+              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzés (stílus, méret, egyéb)" className="elegant-field h-24 resize-y" />
             </div>
             {bookingError ? <p className="text-sm text-red-600">{bookingError}</p> : null}
             {bookingMessage ? <p className="text-sm text-green-700">{bookingMessage}</p> : null}
             <div className="flex justify-end">
-              <button type="submit" disabled={submittingBooking || !form.startDateTime} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Foglalas folyamatban…' : 'Idopont foglalasa'}</button>
+              <button type="submit" disabled={submittingBooking || !form.startDateTime} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Foglalás folyamatban…' : 'Időpont foglalása'}</button>
             </div>
             <p className="border-t border-rose-deep/10 pt-3 text-xs uppercase tracking-[0.22em] text-gray-500">
-              Privat idopont • Google visszaigazolas • 5 csillagos elmeny
+              Privát időpont • Google visszaigazolás • 5 csillagos élmény
             </p>
           </form>
         </div>
@@ -821,36 +821,36 @@ export default function Home() {
 
       <section id="services" className="mx-auto max-w-6xl px-6 py-4">
         <div className="motif-panel rounded-[32px] p-6 lg:p-8">
-          <SectionEyebrow>Szolgaltatasok</SectionEyebrow>
-          <h2 className="text-3xl font-cormorant text-rose-deep">Miben segitunk neked</h2>
+          <SectionEyebrow>Szolgáltatások</SectionEyebrow>
+          <h2 className="text-3xl font-cormorant text-rose-deep">Miben segítünk neked</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-            Igazitas, javitas, kolcsonzes, meretre keszites es vasarlas egy helyen, szemelyes segitseggel.
+            Igazítás, javítás, kölcsönzés, méretre készítés és vásárlás egy helyen, személyes segítséggel.
           </p>
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Varroda</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Igazitas, javitas, zipzar csere, nadrag felhajtas es szukites gyorsan es precizen.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Varroda reszletek</a>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Igazítás, javítás, zipzár csere, nadrág felhajtás és szűkítés gyorsan és precízen.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Varroda részletek</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Kolcsonzes</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruhaink frissen tisztitva, meretre igazitva kolcsonozhetok a nagy napra.</p>
-              <a href="/kolcsonzes.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kolcsonzes oldal</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Kölcsönzés</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruháink frissen tisztítva, méretre igazítva kölcsönözhetők a nagy napra.</p>
+              <a href="/kolcsonzes.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kölcsönzés oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Meretre keszites</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Hozott vagy nalunk valasztott anyagbol, egyedi meretre keszitjuk el almaid ruhajat.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Meretre keszites</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Méretre készítés</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Hozott vagy nálunk választott anyagból, egyedi méretre készítjük el álmaid ruháját.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Méretre készítés</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Igazitasok</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">A kivalasztott ruha meretet es fazonjat tokeletesen rad igazitjuk.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Igazitas oldal</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Igazítások</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">A kiválasztott ruha méretét és fazonját tökéletesen rád igazítjuk.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Igazítás oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Vasarlas</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi, menyecske, oromanya es koszoruslany ruhak szeles valasztekban, kiegeszitokkel.</p>
-              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Vasarlas oldal</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Vásárlás</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi, menyecske, örömanya és koszorúslány ruhák széles választékban, kiegészítőkkel.</p>
+              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Vásárlás oldal</a>
             </article>
           </div>
         </div>
@@ -859,9 +859,9 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-6 py-4">
         <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[0.95fr,1.25fr]">
           <div>
-            <SectionEyebrow>Google velemenyek</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep">Valos visszajelzesek a Google-bol</h3>
-            <p className="mt-2 max-w-xl text-gray-600">A szalon ertekeleseit es vendegvelemenyeit kozvetlenul a Google helyadatlaprol toltjuk be.</p>
+            <SectionEyebrow>Google vélemények</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep">Valós visszajelzések a Google-ból</h3>
+            <p className="mt-2 max-w-xl text-gray-600">A szalon értékeléseit és vendégvéleményeit közvetlenül a Google helyadatlapról töltjük be.</p>
 
             {loadingReviews ? (
               <div className="mt-6 animate-pulse space-y-3">
@@ -877,13 +877,13 @@ export default function Home() {
                   </div>
                   <div>
                     <RatingStars rating={reviewsPlace.rating} />
-                    <p className="mt-2 text-sm text-gray-600">{reviewsPlace.userRatingCount.toLocaleString('hu-HU')} Google ertekeles</p>
+                    <p className="mt-2 text-sm text-gray-600">{reviewsPlace.userRatingCount.toLocaleString('hu-HU')} Google értékelés</p>
                     <p className="mt-1 text-sm text-gray-500">{reviewsPlace.name || 'extremeruha'}</p>
                   </div>
                 </div>
 
                 {reviewsPlace.address ? <p className="mt-4 max-w-md text-sm text-gray-500">{reviewsPlace.address}</p> : null}
-                {reviewsStale ? <p className="mt-3 text-xs uppercase tracking-[0.22em] text-gray-400">Atmenetileg gyorsitotarazott ertekelesek</p> : null}
+                {reviewsStale ? <p className="mt-3 text-xs uppercase tracking-[0.22em] text-gray-400">Átmenetileg gyorsítótárazott értékelések</p> : null}
                 {reviewsPlace.googleMapsUri ? (
                   <a
                     href={reviewsPlace.googleMapsUri}
@@ -897,7 +897,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="mt-6 rounded-2xl border border-rose-deep/10 bg-white px-4 py-4 text-sm text-gray-600">
-                {reviewsError || 'A Google review kapcsolat hamarosan elerheto.'}
+                {reviewsError || 'A Google review kapcsolat hamarosan elérhető.'}
               </div>
             )}
           </div>
@@ -941,12 +941,12 @@ export default function Home() {
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-gray-600">
-                  {review.text ? truncateReviewText(review.text) : 'A teljes velemeny a Google profilon olvashato.'}
+                  {review.text ? truncateReviewText(review.text) : 'A teljes vélemény a Google profilon olvasható.'}
                 </p>
               </article>
             )) : (
               <div className="rounded-2xl border border-rose-deep/10 bg-white px-4 py-5 text-sm text-gray-600 md:col-span-2 xl:col-span-3">
-                {reviewsError || 'A Google profilhoz meg nem erkezett megjelenitheto velemeny.'}
+                {reviewsError || 'A Google profilhoz még nem érkezett megjeleníthető vélemény.'}
               </div>
             )}
           </div>
@@ -957,36 +957,36 @@ export default function Home() {
       <section id="visit" className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           <div className="motif-panel rounded-[32px] p-6">
-            <SectionEyebrow>Latogatas</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Latogass el az extremeruha szalonba</h3>
+            <SectionEyebrow>Látogatás</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Látogass el az extremeruha szalonba</h3>
             <p className="text-gray-600 mb-5">
-              Szalonunk a Metropolban var, privat probafulkekkel, szemelyes tanacsadassal es teljes szolgaltatasi korrel.
+              Szalonunk a Metropolban vár, privát próbafülkékkel, személyes tanácsadással és teljes szolgáltatási körrel.
             </p>
 
             <div className="mb-5 flex flex-wrap gap-3">
-              <MotifBadge>Metropol, Szechenyi u. 78</MotifBadge>
-              <MotifBadge>Privat probafulkek</MotifBadge>
+              <MotifBadge>Metropol, Széchenyi u. 78</MotifBadge>
+              <MotifBadge>Privát próbafülkék</MotifBadge>
             </div>
 
             <div className="space-y-3 text-gray-700">
-              <p className="flex items-center gap-3"><IconShell><StarIcon /></IconShell><span><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</span></p>
-              <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cim:</span> Metropol, Szechenyi u. 78, 3530 Miskolc</span></p>
+              <p className="flex items-center gap-3"><IconShell><StarIcon /></IconShell><span><span className="font-semibold text-rose-deep">Üzlet:</span> extremeruha</span></p>
+              <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cím:</span> Metropol, Széchenyi u. 78, 3530 Miskolc</span></p>
               <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> <a href={`tel:${BUSINESS_PHONE_E164}`} className="hover:text-rose-deep">{BUSINESS_PHONE_DISPLAY}</a></span></p>
               <p className="flex items-center gap-3"><IconShell><SocialIcon /></IconShell><span><span className="font-semibold text-rose-deep">Facebook:</span> <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Menyasszonyi</a></span></p>
             </div>
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
-              <p className="mb-3 flex items-center gap-3 font-semibold text-rose-deep"><IconShell><ClockIcon /></IconShell><span>Nyitvatartas</span></p>
-              <p>Hetfo-Pentek: 10:00 - 17:00</p>
+              <p className="mb-3 flex items-center gap-3 font-semibold text-rose-deep"><IconShell><ClockIcon /></IconShell><span>Nyitvatartás</span></p>
+              <p>Hétfő-Péntek: 10:00 - 17:00</p>
               <p>Szombat: 09:00 - 13:00</p>
-              <p>Vasarnap: Zarva</p>
+              <p>Vasárnap: Zárva</p>
             </div>
           </div>
 
           <div className="motif-panel overflow-hidden rounded-[32px] min-h-[360px]">
             <iframe
               title="extremeruha a Google Maps-en"
-              src="https://www.google.com/maps?q=Metropol+Szechenyi+u.+78+Miskolc+3530&output=embed"
+              src="https://www.google.com/maps?q=Metropol+Sz%C3%A9chenyi+u.+78+Miskolc+3530&output=embed"
               className="h-full w-full min-h-[360px]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -1000,12 +1000,12 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between text-sm text-gray-600">
           <div>© {new Date().getFullYear()} extremeruha</div>
           <div className="flex gap-4">
-            <a href="/kollekcio.html" className="hover:text-rose-deep">Kollekcio</a>
-            <a href="/ruhaproba.html" className="hover:text-rose-deep">Ruhaproba</a>
-            <a href="/kolcsonzes.html" className="hover:text-rose-deep">Kolcsonzes</a>
-            <a href="/ertekesites.html" className="hover:text-rose-deep">Ertekesites</a>
-            <a href="/igazitas.html" className="hover:text-rose-deep">Igazitas</a>
-            <a href="/kiegeszitok.html" className="hover:text-rose-deep">Kiegeszitok</a>
+            <a href="/kollekcio.html" className="hover:text-rose-deep">Kollekció</a>
+            <a href="/ruhaproba.html" className="hover:text-rose-deep">Ruhapróba</a>
+            <a href="/kolcsonzes.html" className="hover:text-rose-deep">Kölcsönzés</a>
+            <a href="/ertekesites.html" className="hover:text-rose-deep">Értékesítés</a>
+            <a href="/igazitas.html" className="hover:text-rose-deep">Igazítás</a>
+            <a href="/kiegeszitok.html" className="hover:text-rose-deep">Kiegészítők</a>
             <a href="/kapcsolat.html" className="hover:text-rose-deep">Kapcsolat</a>
             <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Facebook</a>
           </div>

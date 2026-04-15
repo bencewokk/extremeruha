@@ -57,7 +57,7 @@ export default function Admin() {
 
   async function adminFetch(input: RequestInfo | URL, init?: RequestInit) {
     if (!token) {
-      throw new Error('A folytatashoz jelentkezz be.')
+      throw new Error('A folytatáshoz jelentkezz be.')
     }
 
     const headers = new Headers(init?.headers || {})
@@ -65,7 +65,7 @@ export default function Admin() {
 
     const response = await fetch(input, { ...init, headers })
     if (response.status === 401) {
-      handleLogout('A munkamenet lejart. Kerlek jelentkezz be ujra.')
+      handleLogout('A munkamenet lejárt. Kérlek jelentkezz be újra.')
     }
 
     return response
@@ -89,7 +89,7 @@ export default function Admin() {
       const payload = await response.json().catch(() => ({}))
 
       if (!response.ok || !payload?.token) {
-        setAuthError(payload?.error || 'Hibas bejelentkezesi adatok.')
+        setAuthError(payload?.error || 'Hibás bejelentkezési adatok.')
         return
       }
 
@@ -97,7 +97,7 @@ export default function Admin() {
       setToken(payload.token)
       setLoginForm({ username: '', password: '' })
     } catch (error) {
-      setAuthError('A szerver jelenleg nem elerheto. Kerlek probald ujra.')
+      setAuthError('A szerver jelenleg nem elérhető. Kérlek próbáld újra.')
     } finally {
       setAuthLoading(false)
     }
@@ -114,7 +114,7 @@ export default function Admin() {
     fd.append('file', file)
     const res = await adminFetch('/api/upload', { method: 'POST', body: fd })
     if (!res.ok) {
-      const message = await readErrorMessage(res, 'A feltoltes nem sikerult')
+      const message = await readErrorMessage(res, 'A feltöltés nem sikerült')
       throw new Error(message)
     }
     const json = await res.json()
@@ -132,7 +132,7 @@ export default function Admin() {
       }
 
       if (!image.trim()) {
-        throw new Error('A kep megadasa kotelezo')
+        throw new Error('A kép megadása kötelező')
       }
 
       const payload = {
@@ -143,7 +143,7 @@ export default function Admin() {
 
       const res = await adminFetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) {
-        const message = await readErrorMessage(res, `A letrehozas nem sikerult: ${res.status} ${res.statusText}`)
+        const message = await readErrorMessage(res, `A létrehozás nem sikerült: ${res.status} ${res.statusText}`)
         throw new Error(message)
       }
       const data = await res.json()
@@ -156,7 +156,7 @@ export default function Admin() {
       }
     } catch (err) {
       console.error(err)
-      alert(err instanceof Error ? err.message : 'A termek letrehozasa nem sikerult')
+      alert(err instanceof Error ? err.message : 'A termék létrehozása nem sikerült')
     } finally {
       setLoading(false)
     }
@@ -166,7 +166,7 @@ export default function Admin() {
     if (!id) return
     const res = await adminFetch(`/api/products/${id}`, { method: 'DELETE' })
     if (!res.ok) {
-      const message = await readErrorMessage(res, 'A torles nem sikerult')
+      const message = await readErrorMessage(res, 'A törlés nem sikerült')
       alert(message)
       return
     }
@@ -178,14 +178,14 @@ export default function Admin() {
     return (
       <div className="min-h-screen bg-ivory font-jost">
         <div className="mx-auto max-w-md px-6 py-16">
-          <h1 className="text-3xl font-cormorant text-rose-deep mb-3">Admin bejelentkezes</h1>
-          <p className="text-sm text-gray-600 mb-6">Jelentkezz be a termekkatalogus kezeleshez.</p>
+          <h1 className="text-3xl font-cormorant text-rose-deep mb-3">Admin bejelentkezés</h1>
+          <p className="text-sm text-gray-600 mb-6">Jelentkezz be a termékkatalógus kezeléséhez.</p>
           <form onSubmit={handleLogin} className="space-y-3 bg-white p-4 border rounded">
             <input
               name="username"
               value={loginForm.username}
               onChange={(e) => setLoginForm((s) => ({ ...s, username: e.target.value }))}
-              placeholder="Felhasznalonev"
+              placeholder="Felhasználónév"
               className="w-full border p-2"
               autoComplete="username"
               required
@@ -195,14 +195,14 @@ export default function Admin() {
               type="password"
               value={loginForm.password}
               onChange={(e) => setLoginForm((s) => ({ ...s, password: e.target.value }))}
-              placeholder="Jelszo"
+              placeholder="Jelszó"
               className="w-full border p-2"
               autoComplete="current-password"
               required
             />
             {authError ? <div className="text-sm text-red-600">{authError}</div> : null}
             <button type="submit" disabled={authLoading} className="w-full bg-rose-deep text-white py-2 rounded disabled:opacity-70">
-              {authLoading ? 'Bejelentkezes...' : 'Bejelentkezes'}
+              {authLoading ? 'Bejelentkezés...' : 'Bejelentkezés'}
             </button>
           </form>
         </div>
@@ -214,9 +214,9 @@ export default function Admin() {
     <div className="min-h-screen bg-ivory font-jost">
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-cormorant text-rose-deep">Admin - Termekek</h1>
+          <h1 className="text-3xl font-cormorant text-rose-deep">Admin - Termékek</h1>
           <button className="text-sm border rounded px-3 py-1 bg-white" onClick={() => handleLogout()}>
-            Kijelentkezes
+            Kijelentkezés
           </button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -229,7 +229,7 @@ export default function Admin() {
                     <div className="text-sm text-gray-500">{it.style}</div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="text-sm text-red-600" onClick={() => remove(it._id)}>Torles</button>
+                    <button className="text-sm text-red-600" onClick={() => remove(it._id)}>Törlés</button>
                   </div>
                 </div>
               ))}
@@ -237,21 +237,21 @@ export default function Admin() {
           </div>
           <aside>
             <form onSubmit={createProduct} className="space-y-3 bg-white p-4 border rounded">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Nev" className="w-full border p-2" required />
-              <input name="style" value={form.style} onChange={handleChange} placeholder="Stilus" className="w-full border p-2" required />
+              <input name="name" value={form.name} onChange={handleChange} placeholder="Név" className="w-full border p-2" required />
+              <input name="style" value={form.style} onChange={handleChange} placeholder="Stílus" className="w-full border p-2" required />
               <div>
-                <label className="block text-sm mb-1">Kep</label>
+                <label className="block text-sm mb-1">Kép</label>
                 <input type="file" accept="image/*" onChange={(e) => {
                   const f = e.target.files ? e.target.files[0] : null
                   setFile(f)
                   if (previewUrl) URL.revokeObjectURL(previewUrl)
                   setPreviewUrl(f ? URL.createObjectURL(f) : null)
                 }} className="w-full" />
-                {previewUrl && <img src={previewUrl} alt="Elozet" className="mt-2 max-h-40 w-full rounded object-contain" />}
-                <div className="text-xs text-gray-500 mt-1">Vagy hagyd uresen, es hasznald az alatti kep URL mezot</div>
+                {previewUrl && <img src={previewUrl} alt="Előnézet" className="mt-2 max-h-40 w-full rounded object-contain" />}
+                <div className="text-xs text-gray-500 mt-1">Vagy hagyd üresen, és használd az alatti kép URL mezőt</div>
               </div>
-              <input name="image" value={form.image} onChange={handleChange} placeholder="Vagy illeszd be a kep URL-t" className="w-full border p-2" />
-              <button type="submit" disabled={loading} className="w-full bg-rose-deep text-white py-2 rounded">{loading ? 'Mentes…' : 'Letrehozas'}</button>
+              <input name="image" value={form.image} onChange={handleChange} placeholder="Vagy illeszd be a kép URL-t" className="w-full border p-2" />
+              <button type="submit" disabled={loading} className="w-full bg-rose-deep text-white py-2 rounded">{loading ? 'Mentés…' : 'Létrehozás'}</button>
             </form>
           </aside>
         </div>
