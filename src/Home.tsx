@@ -485,6 +485,36 @@ export default function Home() {
       ],
       hasMap: reviewsPlace?.googleMapsUri || undefined,
       sameAs: reviewsPlace?.googleMapsUri ? [FACEBOOK_URL, reviewsPlace.googleMapsUri] : [FACEBOOK_URL],
+      makesOffer: [
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Menyasszonyi ruha kolcsonzes Miskolc',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Menyasszonyi ruha ertekesites Miskolc',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Menyasszonyi ruha igazitas es meretre keszites Miskolc',
+          },
+        },
+        {
+          '@type': 'Offer',
+          itemOffered: {
+            '@type': 'Service',
+            name: 'Menyasszonyi kiegeszitok Miskolc',
+          },
+        },
+      ],
       aggregateRating,
       review: reviewEntries.length > 0 ? reviewEntries : undefined,
     }
@@ -620,6 +650,7 @@ export default function Home() {
             <div className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</div>
             <div className="hidden md:flex gap-6 text-gray-600">
               <a className="hover:text-rose-deep" href="#collection">Kollekcio</a>
+              <a className="hover:text-rose-deep" href="#services">Szolgaltatasok</a>
               <a className="hover:text-rose-deep" href="#booking">Idopontfoglalas</a>
               <a className="hover:text-rose-deep" href="#visit">Latogatas</a>
               <a className="hover:text-rose-deep" href="#contact">Kapcsolat</a>
@@ -692,6 +723,10 @@ export default function Home() {
             <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekcio oldal</a>
             <a href="/ruhaproba.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ruhaproba reszletei</a>
             <a href="/kapcsolat.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kapcsolat es nyitvatartas</a>
+            <a href="/kolcsonzes.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kolcsonzes</a>
+            <a href="/ertekesites.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ertekesites</a>
+            <a href="/igazitas.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Igazitas</a>
+            <a href="/kiegeszitok.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kiegeszitok</a>
           </div>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -832,6 +867,38 @@ export default function Home() {
               Privat idopont • Google visszaigazolas • 5 csillagos elmeny
             </p>
           </form>
+        </div>
+      </section>
+
+      <section id="services" className="mx-auto max-w-6xl px-6 py-4">
+        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
+          <SectionEyebrow>Szolgaltatasok</SectionEyebrow>
+          <h2 className="text-3xl font-cormorant text-rose-deep">Teljes menyasszonyi szolgaltatasi kor Miskolcon</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
+            Nem csak ruhaval varunk: az extremeruha a valasztastol az utolso igazitasig vegigkiser. Kattints a reszletes oldalakra, hogy a keresokben kulon is megtalalhato legyen minden fontos szolgaltatasunk.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+              <h3 className="text-xl font-cormorant text-rose-deep">Kolcsonzes</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruha kolcsonzesi lehetosegek kulonbozo stilusokban, szemelyes probaval.</p>
+              <a href="/kolcsonzes.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kolcsonzes oldal</a>
+            </article>
+            <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+              <h3 className="text-xl font-cormorant text-rose-deep">Ertekesites</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Uj menyasszonyi ruhak vasarlasi opcioval, tanacsadassal es stilus szerinti valasztassal.</p>
+              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Ertekesites oldal</a>
+            </article>
+            <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+              <h3 className="text-xl font-cormorant text-rose-deep">Igazitas</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Meretre igazitas es finom alakitas, hogy a ruha tokeletesen alljon a nagy napon.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Igazitas oldal</a>
+            </article>
+            <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+              <h3 className="text-xl font-cormorant text-rose-deep">Kiegeszitok</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Fatyol, diszek es kiegeszitok, amelyek osszehangoljak a teljes menyasszonyi megjelenest.</p>
+              <a href="/kiegeszitok.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kiegeszitok oldal</a>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -1035,6 +1102,10 @@ export default function Home() {
           <div className="flex gap-4">
             <a href="/kollekcio.html" className="hover:text-rose-deep">Kollekcio</a>
             <a href="/ruhaproba.html" className="hover:text-rose-deep">Ruhaproba</a>
+            <a href="/kolcsonzes.html" className="hover:text-rose-deep">Kolcsonzes</a>
+            <a href="/ertekesites.html" className="hover:text-rose-deep">Ertekesites</a>
+            <a href="/igazitas.html" className="hover:text-rose-deep">Igazitas</a>
+            <a href="/kiegeszitok.html" className="hover:text-rose-deep">Kiegeszitok</a>
             <a href="/kapcsolat.html" className="hover:text-rose-deep">Kapcsolat</a>
             <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Facebook</a>
           </div>
