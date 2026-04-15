@@ -85,6 +85,22 @@ function extractTags(style: string) {
     .filter(Boolean)
 }
 
+const SEO_TITLE = 'extremeruha | Menyasszonyi ruhaszalon'
+const SEO_DESCRIPTION = 'Extremeruha menyasszonyi szalon exkluziv menyasszonyi ruhakkal, privat ruhaprobaval es online idopontfoglalassal Miskolcon.'
+const BUSINESS_PHONE = '+3615550137'
+const BUSINESS_EMAIL = 'hello@extremeruha.hu'
+const BUSINESS_NAME = 'extremeruha'
+const BUSINESS_CITY = 'Miskolc'
+
+function ensureHeadTag(selector: string, createTag: () => HTMLElement) {
+  const existing = document.head.querySelector<HTMLElement>(selector)
+  if (existing) return existing
+
+  const element = createTag()
+  document.head.appendChild(element)
+  return element
+}
+
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-rose-deep/70">
@@ -353,6 +369,86 @@ export default function Home() {
   }, [reviews])
 
   const heroProduct = products[0]
+
+  useEffect(() => {
+    document.title = SEO_TITLE
+
+    const canonicalHref = `${window.location.origin}/`
+
+    const descriptionMeta = ensureHeadTag('meta[name="description"]', () => {
+      const meta = document.createElement('meta')
+      meta.setAttribute('name', 'description')
+      return meta
+    })
+    descriptionMeta.setAttribute('content', SEO_DESCRIPTION)
+
+    const robotsMeta = ensureHeadTag('meta[name="robots"]', () => {
+      const meta = document.createElement('meta')
+      meta.setAttribute('name', 'robots')
+      return meta
+    })
+    robotsMeta.setAttribute('content', 'index, follow, max-image-preview:large')
+
+    const canonicalLink = ensureHeadTag('link[rel="canonical"]', () => {
+      const link = document.createElement('link')
+      link.setAttribute('rel', 'canonical')
+      return link
+    }) as HTMLLinkElement
+    canonicalLink.href = canonicalHref
+
+    const jsonLdScript = ensureHeadTag('script[data-seo="local-business"]', () => {
+      const script = document.createElement('script')
+      script.setAttribute('type', 'application/ld+json')
+      script.setAttribute('data-seo', 'local-business')
+      return script
+    }) as HTMLScriptElement
+
+    const aggregateRating = reviewsPlace?.rating && reviewsPlace.userRatingCount
+      ? {
+          '@type': 'AggregateRating',
+          ratingValue: reviewsPlace.rating,
+          reviewCount: reviewsPlace.userRatingCount,
+        }
+      : undefined
+
+    const reviewEntries = visibleReviews.map((review) => ({
+      '@type': 'Review',
+      author: {
+        '@type': 'Person',
+        name: review.authorName,
+      },
+      reviewBody: review.text,
+      reviewRating: review.rating
+        ? {
+            '@type': 'Rating',
+            ratingValue: review.rating,
+            bestRating: 5,
+          }
+        : undefined,
+      datePublished: review.publishTime || undefined,
+    }))
+
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'BridalShop',
+      name: reviewsPlace?.name || BUSINESS_NAME,
+      description: SEO_DESCRIPTION,
+      url: canonicalHref,
+      telephone: BUSINESS_PHONE,
+      email: BUSINESS_EMAIL,
+      image: heroProduct?.image ? `${window.location.origin}${heroProduct.image}` : undefined,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: BUSINESS_CITY,
+        addressCountry: 'HU',
+      },
+      sameAs: reviewsPlace?.googleMapsUri ? [reviewsPlace.googleMapsUri] : undefined,
+      aggregateRating,
+      review: reviewEntries.length > 0 ? reviewEntries : undefined,
+    }
+
+    jsonLdScript.textContent = JSON.stringify(schema)
+  }, [heroProduct?.image, reviewsPlace, visibleReviews])
 
   function toggleTag(tag: string) {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]))
