@@ -88,6 +88,7 @@ function extractTags(style: string) {
 const SEO_TITLE = 'extremeruha | Menyasszonyi ruhaszalon'
 const SEO_DESCRIPTION = 'Extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban: privat ruhaproba, kolcsonzes, ertekesites, igazitas es kiegeszitok.'
 const SITE_URL = 'https://extremeruha.hu'
+const LOGO_URL = `${SITE_URL}/logo.png`
 const FACEBOOK_URL = 'https://www.facebook.com/Menyasszonyi/?locale=hu_HU'
 const BUSINESS_PHONE_E164 = '+36706138891'
 const BUSINESS_PHONE_DISPLAY = '06 70 613 8891'
@@ -460,7 +461,8 @@ export default function Home() {
       description: SEO_DESCRIPTION,
       url: canonicalHref,
       telephone: BUSINESS_PHONE_E164,
-      image: heroProduct?.image ? `${window.location.origin}${heroProduct.image}` : undefined,
+      image: heroProduct?.image ? `${window.location.origin}${heroProduct.image}` : LOGO_URL,
+      logo: LOGO_URL,
       address: {
         '@type': 'PostalAddress',
         streetAddress: BUSINESS_STREET_ADDRESS,
@@ -647,7 +649,15 @@ export default function Home() {
       <nav className="sticky top-0 z-40 bg-white/60 backdrop-blur border-b border-rose-deep/10">
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</div>
+            <a href="/" className="inline-flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="extremeruha logo"
+                className="h-11 w-11 rounded-xl bg-white/80 p-1 object-contain ring-1 ring-rose-deep/20"
+                loading="eager"
+              />
+              <span className="text-2xl font-serif font-cormorant text-rose-deep">extremeruha</span>
+            </a>
             <div className="hidden md:flex gap-6 text-gray-600">
               <a className="hover:text-rose-deep" href="#collection">Kollekcio</a>
               <a className="hover:text-rose-deep" href="#services">Szolgaltatasok</a>
