@@ -87,6 +87,7 @@ function extractTags(style: string) {
 
 const SEO_TITLE = 'extremeruha | Menyasszonyi ruhaszalon'
 const SEO_DESCRIPTION = 'Extremeruha menyasszonyi szalon exkluziv menyasszonyi ruhakkal, privat ruhaprobaval es online idopontfoglalassal Miskolcon.'
+const SITE_URL = 'https://extremeruha.hu'
 const BUSINESS_PHONE = '+3615550137'
 const BUSINESS_EMAIL = 'hello@extremeruha.hu'
 const BUSINESS_NAME = 'extremeruha'
@@ -373,7 +374,7 @@ export default function Home() {
   useEffect(() => {
     document.title = SEO_TITLE
 
-    const canonicalHref = `${window.location.origin}/`
+    const canonicalHref = `${SITE_URL}/`
 
     const descriptionMeta = ensureHeadTag('meta[name="description"]', () => {
       const meta = document.createElement('meta')
