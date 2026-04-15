@@ -98,21 +98,6 @@ const BUSINESS_STREET_ADDRESS = 'Szechenyi u. 78, Metropol'
 const BUSINESS_POSTAL_CODE = '3530'
 const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
 
-const FAQ_ITEMS = [
-  {
-    question: 'Hogyan zajlik egy menyasszonyi ruhaproba az extremeruha szalonban?',
-    answer: 'A ruhaproba 90 perces, elore foglalt privat idopontban tortenik. A szalon csapata stilus, szabasonal es a nagy nap hangulata alapjan segit kivalasztani a hozzad illo ruhakat, valamint kolcsonzesben, ertekesitesben es igazitasban is segit.',
-  },
-  {
-    question: 'Milyen stilusu menyasszonyi ruhak erhetok el Miskolcon?',
-    answer: 'A kollekcioban letisztult, romantikus, csipkes, minimal es modern vonalveztetesu menyasszonyi ruhak szerepelnek. Az aktualis darabok a kollekcio reszben es az admin feluleten feltoltott modellekbol jonnek.',
-  },
-  {
-    question: 'Mit erdemes magaddal hozni a ruhaprobara?',
-    answer: 'Hasznos lehet testszinu alsoruhazat, kenyelmes cipo, valamint inspiracios kepek. Ha szeretned, egy kozeli hozzatartozo vagy baratno is elkiserhet az idopontra.',
-  },
-]
-
 function buildProductAltText(product: Product) {
   const styleLabel = product.style.trim() || 'menyasszonyi ruha'
   return `${product.name} - ${styleLabel} menyasszonyi ruha az extremeruha miskolci szalonjabol`
@@ -628,13 +613,14 @@ export default function Home() {
         return
       }
 
+      const successUrl = new URL('/sikeres-foglalas.html', window.location.origin)
+      successUrl.searchParams.set('name', form.name)
+      successUrl.searchParams.set('slot', form.startDateTime)
       if (payload?.eventLink) {
-        window.open(payload.eventLink, '_blank')
+        successUrl.searchParams.set('eventLink', payload.eventLink)
       }
-
-      setBookingMessage('A foglalas sikeresen bekerult a Google Naptarba. Az esemeny uj lapon nyilt meg.')
-      setForm({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
-      await loadAvailabilityForDate(selectedDate)
+      window.location.assign(`${successUrl.pathname}${successUrl.search}`)
+      return
     } catch (error) {
       console.error('Booking request failed', error)
       setBookingError('Nem sikerult kapcsolodni a foglalasi szolgaltatashoz. Kerlek probald ujra.')
@@ -1078,21 +1064,6 @@ export default function Home() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-12">
-        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
-          <SectionEyebrow>Gyakori kerdesek</SectionEyebrow>
-          <h2 className="text-3xl font-cormorant text-rose-deep">Gyakori kerdesek a ruhaprobakrol</h2>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            {FAQ_ITEMS.map((item) => (
-              <article key={item.question} className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-                <h3 className="text-xl font-cormorant text-rose-deep">{item.question}</h3>
-                <p className="mt-3 text-sm leading-7 text-gray-600">{item.answer}</p>
-              </article>
-            ))}
           </div>
         </div>
       </section>

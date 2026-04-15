@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sikeres foglalas | extremeruha</title>
+    <meta name="description" content="Sikeres idopontfoglalas az extremeruha menyasszonyi ruhaszalonban. Tovabbi informaciok es gyakori kerdesek egy helyen." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sikeres foglalas | extremeruha" />
+    <meta property="og:description" content="A foglalas sikeres volt. Nezd meg a tovabbi tudnivalokat es a gyakori kerdeseket." />
+    <meta property="og:url" content="https://extremeruha.hu/sikeres-foglalas.html" />
+    <meta property="og:image" content="https://extremeruha.hu/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://extremeruha.hu/logo.png" />
+    <link rel="canonical" href="https://extremeruha.hu/sikeres-foglalas.html" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="mx-auto min-h-screen max-w-6xl px-6 py-10 text-gray-800">
+      <section class="motif-panel rounded-[32px] p-6 lg:p-8">
+        <div class="mb-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-rose-deep/70">
+          <span class="h-px w-10 bg-rose-deep/30"></span>
+          <span>Idopontfoglalas</span>
+        </div>
+        <h1 class="text-5xl font-cormorant text-rose-deep">Sikeres foglalas</h1>
+        <p id="success-message" class="mt-4 max-w-3xl text-sm leading-7 text-gray-600">
+          Koszonjuk a foglalast. Hamarosan varunk az extremeruha szalonban.
+        </p>
+        <p id="slot-message" class="mt-2 text-sm font-semibold text-rose-deep"></p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a id="event-link" href="#" target="_blank" rel="noreferrer" class="hidden rounded-full bg-rose-deep px-5 py-3 font-semibold text-white">Google Naptar esemeny megnyitasa</a>
+          <a href="/#booking" class="rounded-full border border-rose-deep px-5 py-3 font-semibold text-rose-deep">Uj idopont foglalasa</a>
+          <a href="/" class="rounded-full border border-rose-deep/20 bg-white px-5 py-3 font-semibold text-rose-deep">Vissza a foholapra</a>
+        </div>
+      </section>
+
+      <section class="mt-6 motif-panel rounded-[32px] p-6 lg:p-8">
+        <div class="mb-3 flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-rose-deep/70">
+          <span class="h-px w-10 bg-rose-deep/30"></span>
+          <span>Gyakori kerdesek</span>
+        </div>
+        <h2 class="text-3xl font-cormorant text-rose-deep">Gyakori kerdesek a ruhaprobakrol</h2>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+            <h3 class="text-xl font-cormorant text-rose-deep">Hogyan zajlik egy menyasszonyi ruhaproba az extremeruha szalonban?</h3>
+            <p class="mt-3 text-sm leading-7 text-gray-600">A ruhaproba 90 perces, elore foglalt privat idopontban tortenik. A szalon csapata stilus, szabasonal es a nagy nap hangulata alapjan segit kivalasztani a hozzad illo ruhakat, valamint kolcsonzesben, ertekesitesben es igazitasban is segit.</p>
+          </article>
+          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+            <h3 class="text-xl font-cormorant text-rose-deep">Milyen stilusu menyasszonyi ruhak erhetok el Miskolcon?</h3>
+            <p class="mt-3 text-sm leading-7 text-gray-600">A kollekcioban letisztult, romantikus, csipkes, minimal es modern vonalveztetesu menyasszonyi ruhak szerepelnek. Az aktualis darabok a kollekcio reszben es az admin feluleten feltoltott modellekbol jonnek.</p>
+          </article>
+          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+            <h3 class="text-xl font-cormorant text-rose-deep">Mit erdemes magaddal hozni a ruhaprobara?</h3>
+            <p class="mt-3 text-sm leading-7 text-gray-600">Hasznos lehet testszinu alsoruhazat, kenyelmes cipo, valamint inspiracios kepek. Ha szeretned, egy kozeli hozzatartozo vagy baratno is elkiserhet az idopontra.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search)
+      const name = params.get('name')
+      const slotIso = params.get('slot')
+      const eventLink = params.get('eventLink')
+
+      if (name) {
+        const successMessage = document.getElementById('success-message')
+        if (successMessage) {
+          successMessage.textContent = `Koszonjuk a foglalast, ${name}. Hamarosan varunk az extremeruha szalonban.`
+        }
+      }
+
+      if (slotIso) {
+        const slotDate = new Date(slotIso)
+        if (!Number.isNaN(slotDate.getTime())) {
+          const slotMessage = document.getElementById('slot-message')
+          if (slotMessage) {
+            slotMessage.textContent = `Valasztott idopont: ${slotDate.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+          }
+        }
+      }
+
+      if (eventLink) {
+        const eventAnchor = document.getElementById('event-link')
+        if (eventAnchor) {
+          eventAnchor.setAttribute('href', eventLink)
+          eventAnchor.classList.remove('hidden')
+        }
+      }
+    </script>
+  </body>
+</html>
