@@ -23,6 +23,7 @@ export default defineConfig({
         kollekcio: resolve(__dirname, 'kollekcio.html'),
         ruhaproba: resolve(__dirname, 'ruhaproba.html'),
         kapcsolat: resolve(__dirname, 'kapcsolat.html'),
+        foglalas: resolve(__dirname, 'foglalas.html'),
         kolcsonzes: resolve(__dirname, 'kolcsonzes.html'),
         ertekesites: resolve(__dirname, 'ertekesites.html'),
         igazitas: resolve(__dirname, 'igazitas.html'),
