@@ -668,15 +668,6 @@ export default function Home() {
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
             Az extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban olyan menyasszonyoknak válogat kollekciót, akik egyszerre keresnek elegáns megjelenést, kényelmes viseletet és személyes tanácsadást. A ruhák különböző sziluettekben, anyagokkal és stílusjegyekkel érhetők el, és a választást kölcsönzési, értékesítési és igazítási opciókkal is támogatjuk.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-600">
-            <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekció oldal</a>
-            <a href="/ruhaproba.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ruhapróba részletei</a>
-            <a href="/kapcsolat.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kapcsolat és nyitvatartás</a>
-            <a href="/kolcsonzes.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kölcsönzés</a>
-            <a href="/ertekesites.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Értékesítés</a>
-            <a href="/igazitas.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Igazítás</a>
-            <a href="/kiegeszitok.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kiegészítők</a>
-          </div>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -830,27 +821,22 @@ export default function Home() {
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Varroda</h3>
               <p className="mt-3 text-sm leading-7 text-gray-600">Igazítás, javítás, zipzár csere, nadrág felhajtás és szűkítés gyorsan és precízen.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Varroda részletek</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Kölcsönzés</h3>
               <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruháink frissen tisztítva, méretre igazítva kölcsönözhetők a nagy napra.</p>
-              <a href="/kolcsonzes.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kölcsönzés oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Méretre készítés</h3>
               <p className="mt-3 text-sm leading-7 text-gray-600">Hozott vagy nálunk választott anyagból, egyedi méretre készítjük el álmaid ruháját.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Méretre készítés</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Igazítások</h3>
               <p className="mt-3 text-sm leading-7 text-gray-600">A kiválasztott ruha méretét és fazonját tökéletesen rád igazítjuk.</p>
-              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Igazítás oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Vásárlás</h3>
               <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi, menyecske, örömanya és koszorúslány ruhák széles választékban, kiegészítőkkel.</p>
-              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Vásárlás oldal</a>
             </article>
           </div>
         </div>
@@ -885,14 +871,7 @@ export default function Home() {
                 {reviewsPlace.address ? <p className="mt-4 max-w-md text-sm text-gray-500">{reviewsPlace.address}</p> : null}
                 {reviewsStale ? <p className="mt-3 text-xs uppercase tracking-[0.22em] text-gray-400">Átmenetileg gyorsítótárazott értékelések</p> : null}
                 {reviewsPlace.googleMapsUri ? (
-                  <a
-                    href={reviewsPlace.googleMapsUri}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-flex rounded-full border border-rose-deep/20 px-4 py-2 text-sm font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white"
-                  >
-                    Teljes Google profil
-                  </a>
+                  <p className="mt-5 text-sm text-gray-500">A teljes Google profil elérhető a cég hivatalos csatornáin.</p>
                 ) : null}
               </div>
             ) : (
@@ -924,13 +903,7 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <ReviewAvatar name={review.authorName} photoUrl={review.authorPhotoUrl} />
                   <div className="min-w-0">
-                    {review.authorUrl ? (
-                      <a href={review.authorUrl} target="_blank" rel="noreferrer" className="font-semibold text-gray-800 transition hover:text-rose-deep">
-                        {review.authorName}
-                      </a>
-                    ) : (
-                      <p className="font-semibold text-gray-800">{review.authorName}</p>
-                    )}
+                    <p className="font-semibold text-gray-800">{review.authorName}</p>
                     <p className="text-xs uppercase tracking-[0.22em] text-gray-400">{formatReviewMeta(review)}</p>
                   </div>
                 </div>
@@ -971,8 +944,8 @@ export default function Home() {
             <div className="space-y-3 text-gray-700">
               <p className="flex items-center gap-3"><IconShell><StarIcon /></IconShell><span><span className="font-semibold text-rose-deep">Üzlet:</span> extremeruha</span></p>
               <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cím:</span> Metropol, Széchenyi u. 78, 3530 Miskolc</span></p>
-              <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> <a href={`tel:${BUSINESS_PHONE_E164}`} className="hover:text-rose-deep">{BUSINESS_PHONE_DISPLAY}</a></span></p>
-              <p className="flex items-center gap-3"><IconShell><SocialIcon /></IconShell><span><span className="font-semibold text-rose-deep">Facebook:</span> <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Menyasszonyi</a></span></p>
+              <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> {BUSINESS_PHONE_DISPLAY}</span></p>
+              <p className="flex items-center gap-3"><IconShell><SocialIcon /></IconShell><span><span className="font-semibold text-rose-deep">Facebook:</span> Menyasszonyi</span></p>
             </div>
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
