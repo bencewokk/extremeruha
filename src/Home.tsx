@@ -891,45 +891,6 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-4">
-        <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
-          <article className="motif-panel rounded-[32px] p-6 lg:p-8">
-            <SectionEyebrow>Menyasszonyi ruha Miskolc</SectionEyebrow>
-            <h2 className="text-3xl font-cormorant text-rose-deep">Szemelyes ruhaproba, valodi stilustanacsadas</h2>
-            <div className="mt-4 space-y-4 text-sm leading-7 text-gray-600">
-              <p>
-                Ha menyasszonyi ruhat keresel Miskolcon, az extremeruha szalonban nem csak egy kollekciot kapsz, hanem vegigkiserunk a valasztasi folyamaton. A privat ruhaproba nyugodt kornyezetet ad ahhoz, hogy lathasd, melyik szabasonal, dekoltazs vagy anyag all legkozelebb hozzad.
-              </p>
-              <p>
-                A szalon idopontfoglalassal mukodik, igy minden menyasszonyra eleg ido jut. A ruhaprobak kulonosen hasznosak akkor, ha mar van elkepzelesed az eskuvo stilusarol, de bizonytalan vagy abban, hogy sello, A-vonalu, boho vagy letisztult modern fazon allna a legjobban.
-              </p>
-              <p>
-                A kollekcio es a Google review visszajelzesek egyutt azt a celt szolgaljak, hogy a latogatok valodi kepet kapjanak a szalon hangulatarol, a ruhakrol es a foglalasi folyamatrol. Ez a tartalom a keresoknek is egyertelmuve teszi, hogy az oldal miskolci menyasszonyi ruhaszalonkent mukodik.
-              </p>
-            </div>
-          </article>
-
-          <aside className="motif-panel rounded-[32px] p-6 lg:p-8">
-            <SectionEyebrow>Miert minket</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep">Amit a menyasszonyok leginkabb keresnek</h3>
-            <div className="mt-5 space-y-4 text-sm text-gray-600">
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
-                <p className="font-semibold text-rose-deep">Privat probafoglalas</p>
-                <p className="mt-2 leading-7">Nem zsufolt uzletterben, hanem nyugodt idosavban probalhatsz, amikor a figyelem tenyleg rad iranyul.</p>
-              </div>
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
-                <p className="font-semibold text-rose-deep">Stilus szerint szurt kollekcio</p>
-                <p className="mt-2 leading-7">A ruhak stiluscimkekkel jelennek meg, igy gyorsabban megtalalhatod a romantikus, minimal vagy modern fazonokat.</p>
-              </div>
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
-                <p className="font-semibold text-rose-deep">Konnyu kapcsolatfelvetel</p>
-                <p className="mt-2 leading-7">Az online idopontfoglalas, a telefonos elerhetoseg es a Facebook oldal egy helyen elerheto.</p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 py-4">
         <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[0.95fr,1.25fr]">
           <div>
             <SectionEyebrow>Google velemenyek</SectionEyebrow>

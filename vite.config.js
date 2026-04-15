@@ -24,6 +24,7 @@ export default defineConfig({
         ruhaproba: resolve(__dirname, 'ruhaproba.html'),
         kapcsolat: resolve(__dirname, 'kapcsolat.html'),
         foglalas: resolve(__dirname, 'foglalas.html'),
+        sikeresFoglalas: resolve(__dirname, 'sikeres-foglalas.html'),
         kolcsonzes: resolve(__dirname, 'kolcsonzes.html'),
         ertekesites: resolve(__dirname, 'ertekesites.html'),
         igazitas: resolve(__dirname, 'igazitas.html'),
