@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import { execSync } from 'child_process'
+import { resolve } from 'path'
 
 function getGitHash() {
   try {
@@ -14,6 +15,16 @@ export default defineConfig({
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     __GIT_HASH__: JSON.stringify(getGitHash()),
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        kollekcio: resolve(__dirname, 'kollekcio.html'),
+        ruhaproba: resolve(__dirname, 'ruhaproba.html'),
+        kapcsolat: resolve(__dirname, 'kapcsolat.html'),
+      },
+    },
   },
   server: {
     proxy: {

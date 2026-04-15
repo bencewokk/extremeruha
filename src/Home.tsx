@@ -93,6 +93,26 @@ const BUSINESS_EMAIL = 'hello@extremeruha.hu'
 const BUSINESS_NAME = 'extremeruha'
 const BUSINESS_CITY = 'Miskolc'
 
+const FAQ_ITEMS = [
+  {
+    question: 'Hogyan zajlik egy menyasszonyi ruhaproba az extremeruha szalonban?',
+    answer: 'A ruhaproba 90 perces, elore foglalt privat idopontban tortenik. A szalon csapata stilus, szabasonal es a nagy nap hangulata alapjan segit kivalasztani a hozzad illo ruhakat.',
+  },
+  {
+    question: 'Milyen stilusu menyasszonyi ruhak erhetok el Miskolcon?',
+    answer: 'A kollekcioban letisztult, romantikus, csipkes, minimal es modern vonalveztetesu menyasszonyi ruhak szerepelnek. Az aktualis darabok a kollekcio reszben es az admin feluleten feltoltott modellekbol jonnek.',
+  },
+  {
+    question: 'Mit erdemes magaddal hozni a ruhaprobara?',
+    answer: 'Hasznos lehet testszinu alsoruhazat, kenyelmes cipo, valamint inspiracios kepek. Ha szeretned, egy kozeli hozzatartozo vagy baratno is elkiserhet az idopontra.',
+  },
+]
+
+function buildProductAltText(product: Product) {
+  const styleLabel = product.style.trim() || 'menyasszonyi ruha'
+  return `${product.name} - ${styleLabel} menyasszonyi ruha az extremeruha miskolci szalonjabol`
+}
+
 function ensureHeadTag(selector: string, createTag: () => HTMLElement) {
   const existing = document.head.querySelector<HTMLElement>(selector)
   if (existing) return existing
@@ -602,7 +622,8 @@ export default function Home() {
                 <div className="relative aspect-video w-full overflow-visible">
                   <img
                     src={heroProduct.image}
-                    alt={heroProduct.name}
+                    alt={buildProductAltText(heroProduct)}
+                    fetchPriority="high"
                     className="absolute left-0 top-0 h-[190%] w-full rounded-[2rem] object-cover object-top shadow-lg ring-1 ring-white/60"
                   />
                 </div>
@@ -643,6 +664,14 @@ export default function Home() {
           <SectionEyebrow>Valogatott darabok</SectionEyebrow>
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
           <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturalt szabasok es idotallo elegancia minden darabban.</p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
+            Az extremeruha menyasszonyi ruhaszalon Miskolcon olyan menyasszonyoknak valogat kollekciot, akik egyszerre keresnek elegans megjelenest, kenyelmes viseletet es szemelyes tanacsadast. A ruhak kulonbozo sziluettekben, anyagokkal es stilusjegyekkel erhetok el, hogy a klasszikus, modern es romantikus eskuvokhoz is megtalalhasd a megfelelo darabot.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-600">
+            <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekcio oldal</a>
+            <a href="/ruhaproba.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Ruhaproba reszletei</a>
+            <a href="/kapcsolat.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kapcsolat es nyitvatartas</a>
+          </div>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -786,6 +815,45 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-4">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr,0.95fr]">
+          <article className="motif-panel rounded-[32px] p-6 lg:p-8">
+            <SectionEyebrow>Menyasszonyi ruha Miskolc</SectionEyebrow>
+            <h2 className="text-3xl font-cormorant text-rose-deep">Szemelyes ruhaproba, valodi stilustanacsadas</h2>
+            <div className="mt-4 space-y-4 text-sm leading-7 text-gray-600">
+              <p>
+                Ha menyasszonyi ruhat keresel Miskolcon, az extremeruha szalonban nem csak egy kollekciot kapsz, hanem vegigkiserunk a valasztasi folyamaton. A privat ruhaproba nyugodt kornyezetet ad ahhoz, hogy lathasd, melyik szabasonal, dekoltazs vagy anyag all legkozelebb hozzad.
+              </p>
+              <p>
+                A szalon idopontfoglalassal mukodik, igy minden menyasszonyra eleg ido jut. A ruhaprobak kulonosen hasznosak akkor, ha mar van elkepzelesed az eskuvo stilusarol, de bizonytalan vagy abban, hogy sello, A-vonalu, boho vagy letisztult modern fazon allna a legjobban.
+              </p>
+              <p>
+                A kollekcio es a Google review visszajelzesek egyutt azt a celt szolgaljak, hogy a latogatok valodi kepet kapjanak a szalon hangulatarol, a ruhakrol es a foglalasi folyamatrol. Ez a tartalom a keresoknek is egyertelmuve teszi, hogy az oldal miskolci menyasszonyi ruhaszalonkent mukodik.
+              </p>
+            </div>
+          </article>
+
+          <aside className="motif-panel rounded-[32px] p-6 lg:p-8">
+            <SectionEyebrow>Miert minket</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep">Amit a menyasszonyok leginkabb keresnek</h3>
+            <div className="mt-5 space-y-4 text-sm text-gray-600">
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
+                <p className="font-semibold text-rose-deep">Privat probafoglalas</p>
+                <p className="mt-2 leading-7">Nem zsufolt uzletterben, hanem nyugodt idosavban probalhatsz, amikor a figyelem tenyleg rad iranyul.</p>
+              </div>
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
+                <p className="font-semibold text-rose-deep">Stilus szerint szurt kollekcio</p>
+                <p className="mt-2 leading-7">A ruhak stiluscimkekkel jelennek meg, igy gyorsabban megtalalhatod a romantikus, minimal vagy modern fazonokat.</p>
+              </div>
+              <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
+                <p className="font-semibold text-rose-deep">Konnyu kapcsolatfelvetel</p>
+                <p className="mt-2 leading-7">Az online idopontfoglalas, a telefonos elerhetoseg es a teljes Google profil is egy helyen elerheto.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-4">
         <div className="grid gap-4 rounded-[32px] border border-rose-deep/10 bg-white/70 p-6 backdrop-blur lg:grid-cols-[0.95fr,1.25fr]">
           <div>
             <SectionEyebrow>Google velemenyek</SectionEyebrow>
@@ -924,11 +992,29 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-6 pb-12">
+        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
+          <SectionEyebrow>Gyakori kerdesek</SectionEyebrow>
+          <h2 className="text-3xl font-cormorant text-rose-deep">Gyakori kerdesek a ruhaprobakrol</h2>
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            {FAQ_ITEMS.map((item) => (
+              <article key={item.question} className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+                <h3 className="text-xl font-cormorant text-rose-deep">{item.question}</h3>
+                <p className="mt-3 text-sm leading-7 text-gray-600">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer id="contact" className="border-t border-rose-deep/10 bg-white py-6">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between text-sm text-gray-600">
           <div>© {new Date().getFullYear()} extremeruha</div>
           <div className="flex gap-4">
+            <a href="/kollekcio.html" className="hover:text-rose-deep">Kollekcio</a>
+            <a href="/ruhaproba.html" className="hover:text-rose-deep">Ruhaproba</a>
+            <a href="/kapcsolat.html" className="hover:text-rose-deep">Kapcsolat</a>
             <a href="#" className="hover:text-rose-deep">Instagram</a>
             <a href="#" className="hover:text-rose-deep">Pinterest</a>
           </div>

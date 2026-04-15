@@ -12,6 +12,11 @@ type Props = {
   products: Product[]
 }
 
+function buildProductAltText(product: Product) {
+  const styleLabel = product.style.trim() || 'menyasszonyi ruha'
+  return `${product.name} - ${styleLabel} menyasszonyi ruha az extremeruha miskolci szalonjabol`
+}
+
 export default function ProductCarousel({ products }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const initializedRef = useRef(false)
@@ -125,7 +130,8 @@ export default function ProductCarousel({ products }: Props) {
               <div className="relative aspect-[9/16] w-full overflow-hidden">
                 <img
                   src={product.image}
-                  alt={product.name}
+                  alt={buildProductAltText(product)}
+                  loading="lazy"
                   draggable={false}
                   className="h-full w-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-[1.02]"
                 />
