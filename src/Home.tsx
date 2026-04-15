@@ -98,11 +98,6 @@ const BUSINESS_STREET_ADDRESS = 'Szechenyi u. 78, Metropol'
 const BUSINESS_POSTAL_CODE = '3530'
 const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
 
-function buildProductAltText(product: Product) {
-  const styleLabel = product.style.trim() || 'menyasszonyi ruha'
-  return `${product.name} - ${styleLabel} menyasszonyi ruha az extremeruha miskolci szalonjabol`
-}
-
 function ensureHeadTag(selector: string, createTag: () => HTMLElement) {
   const existing = document.head.querySelector<HTMLElement>(selector)
   if (existing) return existing
@@ -126,16 +121,6 @@ function MotifBadge({ children }: { children: React.ReactNode }) {
     <span className="inline-flex items-center rounded-full border border-rose-deep/15 bg-white/80 px-3 py-1 text-xs font-semibold text-rose-deep shadow-sm backdrop-blur">
       {children}
     </span>
-  )
-}
-
-function SectionDivider() {
-  return (
-    <div className="flex items-center gap-4 py-8">
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose-deep/30 to-transparent" />
-      <span className="h-2 w-2 rotate-45 border border-rose-deep/40 bg-ivory shadow-sm" />
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-rose-deep/30 to-transparent" />
-    </div>
   )
 }
 
@@ -653,53 +638,29 @@ export default function Home() {
 
       {/* Hero */}
       <header className="mx-auto max-w-6xl px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <div className="order-2 lg:order-1 mb-[50.625%]">
-            {heroProduct ? (
-              <div className="relative isolate">
-                <div className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-rose/15 blur-3xl" />
-                <div className="pointer-events-none absolute -right-8 bottom-8 h-24 w-24 rounded-full border border-rose-deep/20" />
-                <div className="relative aspect-video w-full overflow-visible">
-                  <img
-                    src={heroProduct.image}
-                    alt={buildProductAltText(heroProduct)}
-                    fetchPriority="high"
-                    className="absolute left-0 top-0 h-[190%] w-full rounded-[2rem] object-cover object-top shadow-lg ring-1 ring-white/60"
-                  />
-                </div>
-                <div className="pointer-events-none absolute -bottom-4 left-8 hidden rounded-full border border-rose-deep/10 bg-white/85 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-rose-deep shadow-sm backdrop-blur md:block">
-                  Atelier selection
-                </div>
-              </div>
-            ) : (
-              <div className="aspect-video flex w-full items-center justify-center rounded-3xl border border-rose-deep/10 bg-white/70 text-gray-500 shadow-lg">
-                {loadingProducts ? 'Kollekcio betoltese…' : 'Adj hozza ruhakat az Admin feluleten, hogy itt megjelenjenek.'}
-              </div>
-            )}
+        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
+          <SectionEyebrow>Rolam</SectionEyebrow>
+          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">13 eves korom ota szabok, varrok es tervezek</h1>
+          <p className="text-lg text-gray-600 mb-4">
+            A szakma szeretetet dedimtol tanultam. Munkam a hobbim, ezert orommel segitek megvalositani almaid ruhajat, akar sajat elkepzeles, akar kozos tervezes alapjan.
+          </p>
+          <p className="text-lg text-gray-600 mb-6">
+            25 eve mukodo uzletunkben tapasztalt szakertokkel, szeretettel varunk ruhaprobara, hogy a nagy napon igazan kulonleges lehess.
+          </p>
+          <div className="mb-8 flex flex-wrap gap-3">
+            <MotifBadge>25 eve mukodo uzlet</MotifBadge>
+            <MotifBadge>Szemelyes tervezes</MotifBadge>
+            <MotifBadge>Privat ruhaproba</MotifBadge>
           </div>
-          <div className="order-1 lg:order-2">
-            <SectionEyebrow>Atelier bridal salon</SectionEyebrow>
-            <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Exkluziv menyasszonyi kollekcio az <span className="italic">orok</span> pillanatokhoz</h1>
-            <p className="text-lg text-gray-600 mb-6">Finom vonalvezetes, modern szabvonalak es idotallo elegancia. A Metropolban talalhato szalonunkban ruhaproba, kolcsonzes, ertekesites, igazitas es kiegeszito valasztas is elerheto.</p>
-            <div className="mb-8 flex flex-wrap gap-3">
-              <MotifBadge>Privat proba</MotifBadge>
-              <MotifBadge>Kolcsonzes es ertekesites</MotifBadge>
-              <MotifBadge>Igazitas es kiegeszitok</MotifBadge>
-            </div>
-            <div className="flex gap-4">
-              <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
-              <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Proba foglalasa</a>
-            </div>
+          <div className="flex flex-wrap gap-4">
+            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
+            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Proba foglalasa</a>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6">
-        <SectionDivider />
-      </div>
-
       {/* Collection Grid */}
-      <section id="collection" className="py-12">
+      <section id="collection" className="pb-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
           <SectionEyebrow>Valogatott darabok</SectionEyebrow>
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
@@ -761,32 +722,32 @@ export default function Home() {
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
         <div className="motif-panel grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-[32px] p-6 lg:p-8">
           <div>
-            <SectionEyebrow>Idopontfoglalas</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Szemelyre szabott ruhaproba, nyugodt kornyezetben</h3>
-            <p className="text-gray-600">Foglalj privat idopontot, es stylistjaink segitenek megtalalni a hozzad leginkabb illo ruhat.</p>
+            <SectionEyebrow>Tajekoztatas ruhaproba utan</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Ruhaproba 90 perces, privat idopontban</h3>
+            <p className="text-gray-600">A ruhaproba 90 perces, elore foglalt, privat idopontban tortenik, ezert kerjuk, pontosan erkezz.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <MotifBadge>90 perces proba</MotifBadge>
-              <MotifBadge>Kolcsonzes es ertekesites</MotifBadge>
-              <MotifBadge>Igazitas es meretre keszites</MotifBadge>
+              <MotifBadge>Kenyelmes cipo javasolt</MotifBadge>
+              <MotifBadge>Inspiracios kepek hasznosak</MotifBadge>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><ClockIcon /></IconShell>
                 </div>
-                90 perc nyugodt, privat probara.
+                Erkezz pontosan a nyugodt, privat probara.
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><CalendarIcon /></IconShell>
                 </div>
-                Azonnali visszaigazolas Google Naptarral.
+                Hozz kenyelmes cipot es inspiracios kepeket.
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><StarIcon /></IconShell>
                 </div>
-                Szemelyes figyelem minden menyasszonynak.
+                Egy kozeli hozzatartozo vagy baratno elkiserhet.
               </div>
             </div>
           </div>
@@ -861,30 +822,35 @@ export default function Home() {
       <section id="services" className="mx-auto max-w-6xl px-6 py-4">
         <div className="motif-panel rounded-[32px] p-6 lg:p-8">
           <SectionEyebrow>Szolgaltatasok</SectionEyebrow>
-          <h2 className="text-3xl font-cormorant text-rose-deep">Teljes menyasszonyi szolgaltatasi kor Miskolcon</h2>
+          <h2 className="text-3xl font-cormorant text-rose-deep">Miben segitunk neked</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-            Nem csak ruhaval varunk: az extremeruha a valasztastol az utolso igazitasig vegigkiser. Kattints a reszletes oldalakra, hogy a keresokben kulon is megtalalhato legyen minden fontos szolgaltatasunk.
+            Igazitas, javitas, kolcsonzes, meretre keszites es vasarlas egy helyen, szemelyes segitseggel.
           </p>
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+              <h3 className="text-xl font-cormorant text-rose-deep">Varroda</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Igazitas, javitas, zipzar csere, nadrag felhajtas es szukites gyorsan es precizen.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Varroda reszletek</a>
+            </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
               <h3 className="text-xl font-cormorant text-rose-deep">Kolcsonzes</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruha kolcsonzesi lehetosegek kulonbozo stilusokban, szemelyes probaval.</p>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi ruhaink frissen tisztitva, meretre igazitva kolcsonozhetok a nagy napra.</p>
               <a href="/kolcsonzes.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kolcsonzes oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Ertekesites</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Uj menyasszonyi ruhak vasarlasi opcioval, tanacsadassal es stilus szerinti valasztassal.</p>
-              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Ertekesites oldal</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Meretre keszites</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Hozott vagy nalunk valasztott anyagbol, egyedi meretre keszitjuk el almaid ruhajat.</p>
+              <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Meretre keszites</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Igazitas</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Meretre igazitas es finom alakitas, hogy a ruha tokeletesen alljon a nagy napon.</p>
+              <h3 className="text-xl font-cormorant text-rose-deep">Igazitasok</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">A kivalasztott ruha meretet es fazonjat tokeletesen rad igazitjuk.</p>
               <a href="/igazitas.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Igazitas oldal</a>
             </article>
             <article className="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-              <h3 className="text-xl font-cormorant text-rose-deep">Kiegeszitok</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-600">Fatyol, diszek es kiegeszitok, amelyek osszehangoljak a teljes menyasszonyi megjelenest.</p>
-              <a href="/kiegeszitok.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Kiegeszitok oldal</a>
+              <h3 className="text-xl font-cormorant text-rose-deep">Vasarlas</h3>
+              <p className="mt-3 text-sm leading-7 text-gray-600">Menyasszonyi, menyecske, oromanya es koszoruslany ruhak szeles valasztekban, kiegeszitokkel.</p>
+              <a href="/ertekesites.html" className="mt-4 inline-flex text-sm font-semibold text-rose-deep hover:underline">Vasarlas oldal</a>
             </article>
           </div>
         </div>
