@@ -664,10 +664,6 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6 mb-6">
           <SectionEyebrow>Válogatott darabok</SectionEyebrow>
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekció</h2>
-          <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturált szabások és időtálló elegancia minden darabban.</p>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-            Az extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban olyan menyasszonyoknak válogat kollekciót, akik egyszerre keresnek elegáns megjelenést, kényelmes viseletet és személyes tanácsadást. A ruhák különböző sziluettekben, anyagokkal és stílusjegyekkel érhetők el, és a választást kölcsönzési, értékesítési és igazítási opciókkal is támogatjuk.
-          </p>
           {availableTags.length > 0 ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
