@@ -47,8 +47,8 @@ function getBusinessWindow(dateInput: string) {
   const weekDay = date.getDay()
   if (weekDay === 0) return null // Sunday closed
 
-  const openHour = 10
-  const closeHour = weekDay === 6 ? 16 : 19
+  const openHour = weekDay === 6 ? 9 : 10
+  const closeHour = weekDay === 6 ? 13 : 17
 
   const from = new Date(year, month - 1, day, openHour, 0, 0, 0)
   const to = new Date(year, month - 1, day, closeHour, 0, 0, 0)
@@ -86,17 +86,21 @@ function extractTags(style: string) {
 }
 
 const SEO_TITLE = 'extremeruha | Menyasszonyi ruhaszalon'
-const SEO_DESCRIPTION = 'Extremeruha menyasszonyi szalon exkluziv menyasszonyi ruhakkal, privat ruhaprobaval es online idopontfoglalassal Miskolcon.'
+const SEO_DESCRIPTION = 'Extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban: privat ruhaproba, kolcsonzes, ertekesites, igazitas es kiegeszitok.'
 const SITE_URL = 'https://extremeruha.hu'
-const BUSINESS_PHONE = '+3615550137'
-const BUSINESS_EMAIL = 'hello@extremeruha.hu'
+const FACEBOOK_URL = 'https://www.facebook.com/Menyasszonyi/?locale=hu_HU'
+const BUSINESS_PHONE_E164 = '+36706138891'
+const BUSINESS_PHONE_DISPLAY = '06 70 613 8891'
 const BUSINESS_NAME = 'extremeruha'
 const BUSINESS_CITY = 'Miskolc'
+const BUSINESS_STREET_ADDRESS = 'Szechenyi u. 78, Metropol'
+const BUSINESS_POSTAL_CODE = '3530'
+const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
 
 const FAQ_ITEMS = [
   {
     question: 'Hogyan zajlik egy menyasszonyi ruhaproba az extremeruha szalonban?',
-    answer: 'A ruhaproba 90 perces, elore foglalt privat idopontban tortenik. A szalon csapata stilus, szabasonal es a nagy nap hangulata alapjan segit kivalasztani a hozzad illo ruhakat.',
+    answer: 'A ruhaproba 90 perces, elore foglalt privat idopontban tortenik. A szalon csapata stilus, szabasonal es a nagy nap hangulata alapjan segit kivalasztani a hozzad illo ruhakat, valamint kolcsonzesben, ertekesitesben es igazitasban is segit.',
   },
   {
     question: 'Milyen stilusu menyasszonyi ruhak erhetok el Miskolcon?',
@@ -199,11 +203,11 @@ function PhoneIcon() {
   )
 }
 
-function MailIcon() {
+function SocialIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.75 6.25h14.5a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5H4.75a1.5 1.5 0 0 1-1.5-1.5v-8.5a1.5 1.5 0 0 1 1.5-1.5Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="m4 7 8 6 8-6" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.25c-4.84 0-8.75 3.91-8.75 8.75s3.91 8.75 8.75 8.75 8.75-3.91 8.75-8.75S16.84 3.25 12 3.25Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10 10.25h4m-3.25 3h2.5m-2.5-6h2.5" />
     </svg>
   )
 }
@@ -455,15 +459,32 @@ export default function Home() {
       name: reviewsPlace?.name || BUSINESS_NAME,
       description: SEO_DESCRIPTION,
       url: canonicalHref,
-      telephone: BUSINESS_PHONE,
-      email: BUSINESS_EMAIL,
+      telephone: BUSINESS_PHONE_E164,
       image: heroProduct?.image ? `${window.location.origin}${heroProduct.image}` : undefined,
       address: {
         '@type': 'PostalAddress',
+        streetAddress: BUSINESS_STREET_ADDRESS,
+        postalCode: BUSINESS_POSTAL_CODE,
         addressLocality: BUSINESS_CITY,
+        addressRegion: BUSINESS_REGION,
         addressCountry: 'HU',
       },
-      sameAs: reviewsPlace?.googleMapsUri ? [reviewsPlace.googleMapsUri] : undefined,
+      openingHoursSpecification: [
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          opens: '10:00',
+          closes: '17:00',
+        },
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: 'Saturday',
+          opens: '09:00',
+          closes: '13:00',
+        },
+      ],
+      hasMap: reviewsPlace?.googleMapsUri || undefined,
+      sameAs: reviewsPlace?.googleMapsUri ? [FACEBOOK_URL, reviewsPlace.googleMapsUri] : [FACEBOOK_URL],
       aggregateRating,
       review: reviewEntries.length > 0 ? reviewEntries : undefined,
     }
@@ -640,11 +661,11 @@ export default function Home() {
           <div className="order-1 lg:order-2">
             <SectionEyebrow>Atelier bridal salon</SectionEyebrow>
             <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Exkluziv menyasszonyi kollekcio az <span className="italic">orok</span> pillanatokhoz</h1>
-            <p className="text-lg text-gray-600 mb-6">Finom vonalvezetes, modern szabvonalak es idotallo elegancia. Minden ruhat gondosan valogatunk, hogy kulonleges legyen a nagy napod.</p>
+            <p className="text-lg text-gray-600 mb-6">Finom vonalvezetes, modern szabvonalak es idotallo elegancia. A Metropolban talalhato szalonunkban ruhaproba, kolcsonzes, ertekesites, igazitas es kiegeszito valasztas is elerheto.</p>
             <div className="mb-8 flex flex-wrap gap-3">
               <MotifBadge>Privat proba</MotifBadge>
-              <MotifBadge>Szemelyre szabott stilus</MotifBadge>
-              <MotifBadge>Nyugodt hangulat</MotifBadge>
+              <MotifBadge>Kolcsonzes es ertekesites</MotifBadge>
+              <MotifBadge>Igazitas es kiegeszitok</MotifBadge>
             </div>
             <div className="flex gap-4">
               <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekcio megnezese</a>
@@ -665,7 +686,7 @@ export default function Home() {
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekcio</h2>
           <p className="mt-2 max-w-2xl text-gray-600">Finom csipke, strukturalt szabasok es idotallo elegancia minden darabban.</p>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-            Az extremeruha menyasszonyi ruhaszalon Miskolcon olyan menyasszonyoknak valogat kollekciot, akik egyszerre keresnek elegans megjelenest, kenyelmes viseletet es szemelyes tanacsadast. A ruhak kulonbozo sziluettekben, anyagokkal es stilusjegyekkel erhetok el, hogy a klasszikus, modern es romantikus eskuvokhoz is megtalalhasd a megfelelo darabot.
+            Az extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban olyan menyasszonyoknak valogat kollekciot, akik egyszerre keresnek elegans megjelenest, kenyelmes viseletet es szemelyes tanacsadast. A ruhak kulonbozo sziluettekben, anyagokkal es stilusjegyekkel erhetok el, es a valasztast kolcsonzesi, ertekesitesi es igazitasi opciokkal is tamogatjuk.
           </p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-600">
             <a href="/kollekcio.html" className="rounded-full border border-rose-deep/20 bg-white px-4 py-2 font-semibold text-rose-deep transition hover:border-rose-deep hover:bg-rose-deep hover:text-white">Kollekcio oldal</a>
@@ -722,8 +743,8 @@ export default function Home() {
             <p className="text-gray-600">Foglalj privat idopontot, es stylistjaink segitenek megtalalni a hozzad leginkabb illo ruhat.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <MotifBadge>90 perces proba</MotifBadge>
-              <MotifBadge>Stylist tanacsadas</MotifBadge>
-              <MotifBadge>Google naptar szinkron</MotifBadge>
+              <MotifBadge>Kolcsonzes es ertekesites</MotifBadge>
+              <MotifBadge>Igazitas es meretre keszites</MotifBadge>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
@@ -846,7 +867,7 @@ export default function Home() {
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/80 px-4 py-4">
                 <p className="font-semibold text-rose-deep">Konnyu kapcsolatfelvetel</p>
-                <p className="mt-2 leading-7">Az online idopontfoglalas, a telefonos elerhetoseg es a teljes Google profil is egy helyen elerheto.</p>
+                <p className="mt-2 leading-7">Az online idopontfoglalas, a telefonos elerhetoseg es a Facebook oldal egy helyen elerheto.</p>
               </div>
             </div>
           </aside>
@@ -875,7 +896,7 @@ export default function Home() {
                   <div>
                     <RatingStars rating={reviewsPlace.rating} />
                     <p className="mt-2 text-sm text-gray-600">{reviewsPlace.userRatingCount.toLocaleString('hu-HU')} Google ertekeles</p>
-                    <p className="mt-1 text-sm text-gray-500">{reviewsPlace.name || 'Extreme Ruhaszalon'}</p>
+                    <p className="mt-1 text-sm text-gray-500">{reviewsPlace.name || 'extremeruha'}</p>
                   </div>
                 </div>
 
@@ -957,33 +978,33 @@ export default function Home() {
             <SectionEyebrow>Latogatas</SectionEyebrow>
             <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Latogass el az extremeruha szalonba</h3>
             <p className="text-gray-600 mb-5">
-              Szalonunk a belvarosban var, privat probafulkekkel es szemelyes tanacsadassal.
+              Szalonunk a Metropolban var, privat probafulkekkel, szemelyes tanacsadassal es teljes szolgaltatasi korrel.
             </p>
 
             <div className="mb-5 flex flex-wrap gap-3">
-              <MotifBadge>Miskolc belvaros</MotifBadge>
+              <MotifBadge>Metropol, Szechenyi u. 78</MotifBadge>
               <MotifBadge>Privat probafulkek</MotifBadge>
             </div>
 
             <div className="space-y-3 text-gray-700">
               <p className="flex items-center gap-3"><IconShell><StarIcon /></IconShell><span><span className="font-semibold text-rose-deep">Uzlet:</span> extremeruha</span></p>
-              <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cim:</span> Munkacsy utca, 3530 Miskolc, Magyarorszag</span></p>
-              <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> +36 1 555 0137</span></p>
-              <p className="flex items-center gap-3"><IconShell><MailIcon /></IconShell><span><span className="font-semibold text-rose-deep">Email:</span> hello@extremeruha.hu</span></p>
+              <p className="flex items-center gap-3"><IconShell><PinIcon /></IconShell><span><span className="font-semibold text-rose-deep">Cim:</span> Metropol, Szechenyi u. 78, 3530 Miskolc</span></p>
+              <p className="flex items-center gap-3"><IconShell><PhoneIcon /></IconShell><span><span className="font-semibold text-rose-deep">Telefon:</span> <a href={`tel:${BUSINESS_PHONE_E164}`} className="hover:text-rose-deep">{BUSINESS_PHONE_DISPLAY}</a></span></p>
+              <p className="flex items-center gap-3"><IconShell><SocialIcon /></IconShell><span><span className="font-semibold text-rose-deep">Facebook:</span> <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Menyasszonyi</a></span></p>
             </div>
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
               <p className="mb-3 flex items-center gap-3 font-semibold text-rose-deep"><IconShell><ClockIcon /></IconShell><span>Nyitvatartas</span></p>
-              <p>Hetfo-Pentek: 10:00 - 19:00</p>
-              <p>Szombat: 10:00 - 16:00</p>
-              <p>Vasarnap: Elore egyeztetett idopontban</p>
+              <p>Hetfo-Pentek: 10:00 - 17:00</p>
+              <p>Szombat: 09:00 - 13:00</p>
+              <p>Vasarnap: Zarva</p>
             </div>
           </div>
 
           <div className="motif-panel overflow-hidden rounded-[32px] min-h-[360px]">
             <iframe
-              title="Bridal Bloom on Google Maps"
-              src="https://www.google.com/maps?q=Extreme+Ruhaszalon+Miskolc&output=embed"
+              title="extremeruha a Google Maps-en"
+              src="https://www.google.com/maps?q=Metropol+Szechenyi+u.+78+Miskolc+3530&output=embed"
               className="h-full w-full min-h-[360px]"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -1015,8 +1036,7 @@ export default function Home() {
             <a href="/kollekcio.html" className="hover:text-rose-deep">Kollekcio</a>
             <a href="/ruhaproba.html" className="hover:text-rose-deep">Ruhaproba</a>
             <a href="/kapcsolat.html" className="hover:text-rose-deep">Kapcsolat</a>
-            <a href="#" className="hover:text-rose-deep">Instagram</a>
-            <a href="#" className="hover:text-rose-deep">Pinterest</a>
+            <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className="hover:text-rose-deep">Facebook</a>
           </div>
         </div>
         <div className="mx-auto max-w-6xl px-6 mt-2 text-xs text-gray-400">
