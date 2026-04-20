@@ -31,6 +31,19 @@ type GoogleReviewsPlace = {
   userRatingCount: number
 }
 
+type ReservationTypeId = 'ruhaproba' | 'kolcsonzesi-konzultacio' | 'vasarlasi-konzultacio'
+
+type ReservationTypeConfig = {
+  id: ReservationTypeId
+  label: string
+  durationMinutes: number
+  heading: string
+  description: string
+  badges: [string, string, string]
+  highlights: [string, string, string]
+  notesPlaceholder: string
+}
+
 function toDateInputValue(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -97,6 +110,61 @@ const BUSINESS_CITY = 'Miskolc'
 const BUSINESS_STREET_ADDRESS = 'Széchenyi u. 78, Metropol'
 const BUSINESS_POSTAL_CODE = '3530'
 const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
+const DEFAULT_RESERVATION_TYPE: ReservationTypeId = 'ruhaproba'
+const SLOT_STEP_MINUTES = 15
+const RESERVATION_TYPES: Record<ReservationTypeId, ReservationTypeConfig> = {
+  ruhaproba: {
+    id: 'ruhaproba',
+    label: 'Ruhapróba',
+    durationMinutes: 90,
+    heading: 'Ruhapróba 90 perces, privát időpontban',
+    description: 'A ruhapróba 90 perces, előre foglalt, privát időpontban történik, ezért kérjük, pontosan érkezz.',
+    badges: ['90 perces próba', 'Kényelmes cipő javasolt', 'Inspirációs képek hasznosak'],
+    highlights: [
+      'Érkezz pontosan a nyugodt, privát próbára.',
+      'Hozz kényelmes cipőt és inspirációs képeket.',
+      'Egy közeli hozzátartozó vagy barátnő elkísérhet.',
+    ],
+    notesPlaceholder: 'Megjegyzés (stílus, méret, egyéb)',
+  },
+  'kolcsonzesi-konzultacio': {
+    id: 'kolcsonzesi-konzultacio',
+    label: 'Kölcsönzési konzultáció',
+    durationMinutes: 60,
+    heading: 'Kölcsönzési konzultáció 60 perces időpontban',
+    description: 'Átbeszéljük a kölcsönzési igényeket, a szóba jöhető modelleket és a nagy nap időzítését egy személyes konzultáción.',
+    badges: ['60 perces konzultáció', 'Költségkeret egyeztetés', 'Elérhető modellek áttekintése'],
+    highlights: [
+      'Érkezz pontosan, hogy a teljes konzultáció rendelkezésedre álljon.',
+      'Hasznos, ha hozol inspirációs képeket és az esküvő dátumát.',
+      'A kölcsönzési lehetőségeket és a következő lépéseket együtt átbeszéljük.',
+    ],
+    notesPlaceholder: 'Megjegyzés (elképzelt fazon, dátum, költségkeret)',
+  },
+  'vasarlasi-konzultacio': {
+    id: 'vasarlasi-konzultacio',
+    label: 'Vásárlási konzultáció',
+    durationMinutes: 60,
+    heading: 'Vásárlási konzultáció 60 perces időpontban',
+    description: 'Segítünk végignézni a megvásárolható ruhákat, a méret- és fazonválasztást, valamint az egyedi igényeket.',
+    badges: ['60 perces konzultáció', 'Megvásárolható ruhák', 'Méret és fazon egyeztetés'],
+    highlights: [
+      'Érkezz pontosan, hogy legyen idő a modellek összehasonlítására.',
+      'Inspirációs képek és elképzelt stílus nagy segítség a választásnál.',
+      'A vásárlási opciókat és az igazítási lehetőségeket is átbeszéljük.',
+    ],
+    notesPlaceholder: 'Megjegyzés (kedvelt stílus, méret, fontos szempontok)',
+  },
+}
+const RESERVATION_TYPE_ORDER: ReservationTypeId[] = [
+  'ruhaproba',
+  'kolcsonzesi-konzultacio',
+  'vasarlasi-konzultacio',
+]
+
+function formatDurationMinutes(durationMinutes: number) {
+  return `${durationMinutes} perces`
+}
 
 function ensureHeadTag(selector: string, createTag: () => HTMLElement) {
   const existing = document.head.querySelector<HTMLElement>(selector)
@@ -228,7 +296,14 @@ function ReviewAvatar({ name, photoUrl }: { name: string, photoUrl?: string }) {
 }
 
 export default function Home() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', startDateTime: '', notes: '' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    reservationType: DEFAULT_RESERVATION_TYPE as ReservationTypeId,
+    startDateTime: '',
+    notes: '',
+  })
   const [selectedDate, setSelectedDate] = useState(() => toDateInputValue(new Date()))
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingAvailability, setLoadingAvailability] = useState(false)
@@ -246,6 +321,7 @@ export default function Home() {
   const [loadingReviews, setLoadingReviews] = useState(true)
   const [reviewsError, setReviewsError] = useState('')
   const [reviewsStale, setReviewsStale] = useState(false)
+  const selectedReservationType = RESERVATION_TYPES[form.reservationType] || RESERVATION_TYPES[DEFAULT_RESERVATION_TYPE]
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -502,7 +578,7 @@ export default function Home() {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }))
   }
 
-  async function loadAvailabilityForDate(dateValue: string, preferredSlot = '') {
+  async function loadAvailabilityForDate(dateValue: string, preferredSlot = '', reservationTypeId = form.reservationType) {
     const window = getBusinessWindow(dateValue)
     if (!window) {
       setAvailableSlots([])
@@ -520,6 +596,7 @@ export default function Home() {
         fromIso: window.from.toISOString(),
         toIso: window.to.toISOString(),
         timeZone: clientTimeZone,
+        reservationType: reservationTypeId,
       })
 
       const response = await fetch(`/api/bookings/availability?${params.toString()}`)
@@ -548,9 +625,9 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadAvailabilityForDate(selectedDate, form.startDateTime)
+    loadAvailabilityForDate(selectedDate, form.startDateTime, form.reservationType)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate])
+  }, [selectedDate, form.reservationType])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -582,6 +659,7 @@ export default function Home() {
           startIso: start.toISOString(),
           notes: form.notes,
           timeZone: clientTimeZone,
+          reservationType: form.reservationType,
         }),
       })
 
@@ -601,6 +679,7 @@ export default function Home() {
       const successUrl = new URL('/sikeres-foglalas.html', window.location.origin)
       successUrl.searchParams.set('name', form.name)
       successUrl.searchParams.set('slot', form.startDateTime)
+      successUrl.searchParams.set('reservationType', payload?.reservationType || form.reservationType)
       if (payload?.eventLink) {
         successUrl.searchParams.set('eventLink', payload.eventLink)
       }
@@ -654,7 +733,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap gap-4">
             <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekció megnézése</a>
-            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Próba foglalása</a>
+            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Időpont foglalása</a>
           </div>
         </div>
       </header>
@@ -709,36 +788,56 @@ export default function Home() {
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
         <div className="motif-panel grid grid-cols-1 lg:grid-cols-2 gap-6 items-center rounded-[32px] p-6 lg:p-8">
           <div>
-            <SectionEyebrow>Tájékoztatás ruhapróba után</SectionEyebrow>
-            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">Ruhapróba 90 perces, privát időpontban</h3>
-            <p className="text-gray-600">A ruhapróba 90 perces, előre foglalt, privát időpontban történik, ezért kérjük, pontosan érkezz.</p>
+            <SectionEyebrow>Foglalási tájékoztatás</SectionEyebrow>
+            <h3 className="text-2xl font-cormorant text-rose-deep mb-3">{selectedReservationType.heading}</h3>
+            <p className="text-gray-600">{selectedReservationType.description}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <MotifBadge>90 perces próba</MotifBadge>
-              <MotifBadge>Kényelmes cipő javasolt</MotifBadge>
-              <MotifBadge>Inspirációs képek hasznosak</MotifBadge>
+              {selectedReservationType.badges.map((badge) => (
+                <MotifBadge key={badge}>{badge}</MotifBadge>
+              ))}
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><ClockIcon /></IconShell>
                 </div>
-                Érkezz pontosan a nyugodt, privát próbára.
+                {selectedReservationType.highlights[0]}
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><CalendarIcon /></IconShell>
                 </div>
-                Hozz kényelmes cipőt és inspirációs képeket.
+                {selectedReservationType.highlights[1]}
               </div>
               <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
                 <div className="mb-2 flex items-center gap-2 text-rose-deep">
                   <IconShell><StarIcon /></IconShell>
                 </div>
-                Egy közeli hozzátartozó vagy barátnő elkísérhet.
+                {selectedReservationType.highlights[2]}
               </div>
             </div>
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="block text-sm text-gray-700 mb-2">Foglalás típusa</label>
+              <div className="flex flex-wrap gap-2">
+                {RESERVATION_TYPE_ORDER.map((reservationTypeId) => {
+                  const reservationType = RESERVATION_TYPES[reservationTypeId]
+                  const active = form.reservationType === reservationTypeId
+
+                  return (
+                    <button
+                      key={reservationType.id}
+                      type="button"
+                      onClick={() => setForm((current) => ({ ...current, reservationType: reservationType.id, startDateTime: '' }))}
+                      className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${active ? 'border-rose-deep bg-rose-deep text-white' : 'border-rose-deep/30 bg-white text-rose-deep'}`}
+                    >
+                      {reservationType.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input name="name" value={form.name} onChange={handleChange} placeholder="Teljes név" className="elegant-field" required />
               <input name="email" value={form.email} onChange={handleChange} placeholder="Email-cím" className="elegant-field" required />
@@ -789,10 +888,10 @@ export default function Home() {
                   })}
                 </div>
               )}
-              <p className="mt-2 text-xs text-gray-500">Az időpontok a Google Naptárból érkeznek, 90 percesek, és 15 percenként indulnak.</p>
+              <p className="mt-2 text-xs text-gray-500">Az időpontok a Google Naptárból érkeznek. A kiválasztott foglalás {formatDurationMinutes(selectedReservationType.durationMinutes)}, és {SLOT_STEP_MINUTES} percenként indulhat.</p>
             </div>
             <div>
-              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Megjegyzés (stílus, méret, egyéb)" className="elegant-field h-24 resize-y" />
+              <textarea name="notes" value={form.notes} onChange={handleChange} placeholder={selectedReservationType.notesPlaceholder} className="elegant-field h-24 resize-y" />
             </div>
             {bookingError ? <p className="text-sm text-red-600">{bookingError}</p> : null}
             {bookingMessage ? <p className="text-sm text-green-700">{bookingMessage}</p> : null}
@@ -800,7 +899,7 @@ export default function Home() {
               <button type="submit" disabled={submittingBooking || !form.startDateTime} className="rounded-full bg-rose-deep px-6 py-2 text-white font-semibold disabled:opacity-60">{submittingBooking ? 'Foglalás folyamatban…' : 'Időpont foglalása'}</button>
             </div>
             <p className="border-t border-rose-deep/10 pt-3 text-xs uppercase tracking-[0.22em] text-gray-500">
-              Privát időpont • Google visszaigazolás • 5 csillagos élmény
+              {selectedReservationType.label} • Google visszaigazolás • 5 csillagos élmény
             </p>
           </form>
         </div>

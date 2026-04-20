@@ -50,8 +50,31 @@ function formatGoogleDate(value) {
   return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
-const APPOINTMENT_DURATION_MINUTES = 90
 const SLOT_STEP_MINUTES = 15
+const DEFAULT_RESERVATION_TYPE = 'ruhaproba'
+const RESERVATION_TYPES = {
+  ruhaproba: {
+    id: 'ruhaproba',
+    label: 'Ruhapróba',
+    durationMinutes: 90,
+    eventTitle: 'Menyasszonyi ruhaproba',
+    durationLabel: 'Idotartam: 90 perc',
+  },
+  'kolcsonzesi-konzultacio': {
+    id: 'kolcsonzesi-konzultacio',
+    label: 'Kölcsönzési konzultáció',
+    durationMinutes: 60,
+    eventTitle: 'Menyasszonyi ruhakolcsonzesi konzultacio',
+    durationLabel: 'Idotartam: 60 perc',
+  },
+  'vasarlasi-konzultacio': {
+    id: 'vasarlasi-konzultacio',
+    label: 'Vásárlási konzultáció',
+    durationMinutes: 60,
+    eventTitle: 'Menyasszonyi ruhavasarlasi konzultacio',
+    durationLabel: 'Idotartam: 60 perc',
+  },
+}
 const GOOGLE_REVIEWS_CACHE_TTL_MS = 30 * 60 * 1000
 let googleReviewsCache = { data: null, expiresAt: 0 }
 
@@ -93,17 +116,36 @@ function buildAvailableStarts({ windowStart, windowEnd, busyRanges, stepMinutes,
   return available
 }
 
-function buildFallbackCalendarUrl({ name, email, phone, notes, start, end }) {
+function getReservationType(typeId) {
+  return RESERVATION_TYPES[typeId] || null
+}
+
+function resolveReservationType(typeId) {
+  if (!typeId) return RESERVATION_TYPES[DEFAULT_RESERVATION_TYPE]
+  return getReservationType(typeId)
+}
+
+function buildReservationTypePayload(type) {
+  return {
+    id: type.id,
+    label: type.label,
+    durationMinutes: type.durationMinutes,
+    stepMinutes: SLOT_STEP_MINUTES,
+  }
+}
+
+function buildFallbackCalendarUrl({ reservationType, name, email, phone, notes, start, end }) {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: 'Menyasszonyi ruhaproba',
+    text: reservationType.eventTitle,
     dates: `${formatGoogleDate(start)}/${formatGoogleDate(end)}`,
     details: [
+      `Reservation type: ${reservationType.label} (${reservationType.id})`,
       `Client: ${name}`,
       `Email: ${email}`,
       `Phone: ${phone}`,
       notes ? `Notes: ${notes}` : '',
-      'Idotartam: 1,5 ora',
+      reservationType.durationLabel,
     ].filter(Boolean).join('\n'),
     location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
   })
@@ -369,12 +411,17 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
 })
 
 app.get('/api/bookings/availability', async (req, res) => {
-  const { fromIso, toIso, timeZone } = req.query
+  const { fromIso, toIso, timeZone, reservationType: reservationTypeId } = req.query
   const from = new Date(fromIso)
   const to = new Date(toIso)
+  const reservationType = resolveReservationType(reservationTypeId)
 
   if (!fromIso || !toIso || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) {
     return res.status(400).json({ error: 'A fromIso es toIso kotelezo, es ervenyes idotartomanyt kell megadni' })
+  }
+
+  if (!reservationType) {
+    return res.status(400).json({ error: 'Ervenytelen reservationType ertek' })
   }
 
   const calendar = getCalendarClient()
@@ -392,13 +439,14 @@ app.get('/api/bookings/availability', async (req, res) => {
       windowEnd: to,
       busyRanges,
       stepMinutes: SLOT_STEP_MINUTES,
-      durationMinutes: APPOINTMENT_DURATION_MINUTES,
+      durationMinutes: reservationType.durationMinutes,
     })
 
     return res.json({
       slots,
       stepMinutes: SLOT_STEP_MINUTES,
-      durationMinutes: APPOINTMENT_DURATION_MINUTES,
+      durationMinutes: reservationType.durationMinutes,
+      reservationType: buildReservationTypePayload(reservationType),
     })
   } catch (error) {
     console.error('Google Calendar availability check failed', error)
@@ -407,12 +455,17 @@ app.get('/api/bookings/availability', async (req, res) => {
 })
 
 app.post('/api/bookings', async (req, res) => {
-  const { name, email, phone, startIso, notes, timeZone } = req.body || {}
+  const { name, email, phone, startIso, notes, timeZone, reservationType: reservationTypeId } = req.body || {}
+  const reservationType = resolveReservationType(reservationTypeId)
 
   if (!name || !email || !phone || !startIso) {
     return res.status(400).json({
       error: 'A name, email, phone es startIso mezok kotelezoek',
     })
+  }
+
+  if (!reservationType) {
+    return res.status(400).json({ error: 'Ervenytelen reservationType ertek' })
   }
 
   const start = new Date(startIso)
@@ -424,8 +477,9 @@ app.post('/api/bookings', async (req, res) => {
     return res.status(400).json({ error: `A foglalas kezdete csak ${SLOT_STEP_MINUTES} perces lepeskozokben lehet` })
   }
 
-  const end = new Date(start.getTime() + APPOINTMENT_DURATION_MINUTES * 60 * 1000)
+  const end = new Date(start.getTime() + reservationType.durationMinutes * 60 * 1000)
   const fallbackUrl = buildFallbackCalendarUrl({
+    reservationType,
     name,
     email,
     phone,
@@ -454,16 +508,18 @@ app.post('/api/bookings', async (req, res) => {
 
     const event = await calendar.events.insert({
       calendarId,
-      eventId: `bridal-${start.getTime()}`,
+      eventId: `${reservationType.id}-${start.getTime()}`,
       requestBody: {
-        summary: 'Menyasszonyi ruhaproba',
+        summary: reservationType.eventTitle,
         location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
         description: [
+          `Reservation type: ${reservationType.label}`,
+          `Reservation type id: ${reservationType.id}`,
           `Client: ${name}`,
           `Email: ${email}`,
           `Phone: ${phone}`,
           notes ? `Notes: ${notes}` : '',
-          'Idotartam: 1,5 ora',
+          reservationType.durationLabel,
         ].filter(Boolean).join('\n'),
         start: {
           dateTime: start.toISOString(),
@@ -483,6 +539,7 @@ app.post('/api/bookings', async (req, res) => {
       eventLink: event.data.htmlLink,
       startIso: start.toISOString(),
       endIso: end.toISOString(),
+      reservationType: reservationType.id,
     })
   } catch (error) {
     if (error?.code === 409) {

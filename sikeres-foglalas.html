@@ -31,6 +31,7 @@
         <p id="success-message" class="mt-4 max-w-3xl text-sm leading-7 text-gray-600">
           Köszönjük a foglalást. Hamarosan várunk az extremeruha szalonban.
         </p>
+        <p id="reservation-type-message" class="mt-2 text-sm font-semibold text-rose-deep"></p>
         <p id="slot-message" class="mt-2 text-sm font-semibold text-rose-deep"></p>
 
         <div class="mt-6 flex flex-wrap gap-3">
@@ -45,36 +46,95 @@
           <span class="h-px w-10 bg-rose-deep/30"></span>
           <span>Gyakori kérdések</span>
         </div>
-        <h2 class="text-3xl font-cormorant text-rose-deep">Gyakori kérdések a ruhapróbákról</h2>
+        <h2 id="faq-title" class="text-3xl font-cormorant text-rose-deep">Gyakori kérdések a ruhapróbákról</h2>
 
-        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+        <div id="faq-items" class="mt-6 grid gap-4 lg:grid-cols-3">
           <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
             <h3 class="text-xl font-cormorant text-rose-deep">Hogyan zajlik egy menyasszonyi ruhapróba az extremeruha szalonban?</h3>
             <p class="mt-3 text-sm leading-7 text-gray-600">A ruhapróba 90 perces, előre foglalt privát időpontban történik. A szalon csapata stílus, szabásvonal és a nagy nap hangulata alapján segít kiválasztani a hozzád illő ruhákat, valamint kölcsönzésben, értékesítésben és igazításban is segít.</p>
-          </article>
-          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-            <h3 class="text-xl font-cormorant text-rose-deep">Milyen stílusú menyasszonyi ruhák érhetők el Miskolcon?</h3>
-            <p class="mt-3 text-sm leading-7 text-gray-600">A kollekcióban letisztult, romantikus, csipkés, minimal és modern vonalvezetésű menyasszonyi ruhák szerepelnek. Az aktuális darabok a kollekció részben és az admin felületen feltöltött modellekből jönnek.</p>
-          </article>
-          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
-            <h3 class="text-xl font-cormorant text-rose-deep">Mit érdemes magaddal hozni a ruhapróbára?</h3>
-            <p class="mt-3 text-sm leading-7 text-gray-600">Hasznos lehet testszínű alsóruházat, kényelmes cipő, valamint inspirációs képek. Ha szeretnéd, egy közeli hozzátartozó vagy barátnő is elkísérhet az időpontra.</p>
           </article>
         </div>
       </section>
     </main>
 
     <script>
+      const RESERVATION_TYPES = {
+        ruhaproba: {
+          label: 'Ruhapróba',
+          successLabel: 'ruhapróba',
+          faqTitle: 'Gyakori kérdések a ruhapróbákról',
+          faqs: [
+            {
+              title: 'Hogyan zajlik egy menyasszonyi ruhapróba az extremeruha szalonban?',
+              text: 'A ruhapróba 90 perces, előre foglalt privát időpontban történik. A szalon csapata stílus, szabásvonal és a nagy nap hangulata alapján segít kiválasztani a hozzád illő ruhákat, valamint kölcsönzésben, értékesítésben és igazításban is segít.',
+            },
+            {
+              title: 'Milyen stílusú menyasszonyi ruhák érhetők el Miskolcon?',
+              text: 'A kollekcióban letisztult, romantikus, csipkés, minimal és modern vonalvezetésű menyasszonyi ruhák szerepelnek. Az aktuális darabok a kollekció részben és az admin felületen feltöltött modellekből jönnek.',
+            },
+            {
+              title: 'Mit érdemes magaddal hozni a ruhapróbára?',
+              text: 'Hasznos lehet testszínű alsóruházat, kényelmes cipő, valamint inspirációs képek. Ha szeretnéd, egy közeli hozzátartozó vagy barátnő is elkísérhet az időpontra.',
+            },
+          ],
+        },
+        'kolcsonzesi-konzultacio': {
+          label: 'Kölcsönzési konzultáció',
+          successLabel: 'kölcsönzési konzultáció',
+          faqTitle: 'Gyakori kérdések a kölcsönzési konzultációról',
+          faqs: [
+            {
+              title: 'Miről szól egy kölcsönzési konzultáció?',
+              text: 'A konzultáció alatt átbeszéljük, milyen stílusú ruhát keresel, mikor lesz az esküvő, és mely modellek jöhetnek szóba kölcsönzésre a szalon kínálatából.',
+            },
+            {
+              title: 'Mit érdemes előre átgondolni a konzultáció előtt?',
+              text: 'Hasznos, ha tudod az esküvő dátumát, a tervezett költségkeretet és azt, milyen fazonok vagy hangulatok állnak hozzád közel.',
+            },
+            {
+              title: 'Lesz szó az igazításról és a következő lépésekről is?',
+              text: 'Igen. A személyes konzultáció során átbeszéljük a kölcsönzési folyamatot, a szükséges igazításokat és azt is, milyen következő egyeztetésekre lehet szükség.',
+            },
+          ],
+        },
+        'vasarlasi-konzultacio': {
+          label: 'Vásárlási konzultáció',
+          successLabel: 'vásárlási konzultáció',
+          faqTitle: 'Gyakori kérdések a vásárlási konzultációról',
+          faqs: [
+            {
+              title: 'Mit nézünk át egy vásárlási konzultáción?',
+              text: 'A megvásárolható modelleket, a megfelelő méretet, a számodra előnyös szabásvonalakat és azt, mely ruhák illenek legjobban az elképzelt esküvői hangulathoz.',
+            },
+            {
+              title: 'Érdemes inspirációt vagy konkrét elképzelést hozni?',
+              text: 'Igen. Fotók, kedvelt fazonok, nyakkivágások vagy anyagok említése nagyban felgyorsítja a választást és segít szűkíteni a lehetőségeket.',
+            },
+            {
+              title: 'A vásárlás mellett igazításról is kapok információt?',
+              text: 'Igen. A konzultáció része, hogy átbeszéljük az esetleges igazításokat, az egyedi igényeket és a ruha véglegesítésének folyamatát is.',
+            },
+          ],
+        },
+      }
+
       const params = new URLSearchParams(window.location.search)
       const name = params.get('name')
       const slotIso = params.get('slot')
       const eventLink = params.get('eventLink')
+      const reservationTypeId = params.get('reservationType') || 'ruhaproba'
+      const reservationType = RESERVATION_TYPES[reservationTypeId] || RESERVATION_TYPES.ruhaproba
 
       if (name) {
         const successMessage = document.getElementById('success-message')
         if (successMessage) {
-          successMessage.textContent = `Köszönjük a foglalást, ${name}. Hamarosan várunk az extremeruha szalonban.`
+          successMessage.textContent = `Köszönjük a foglalást, ${name}. Hamarosan várunk az extremeruha szalonban a ${reservationType.successLabel} időpontodra.`
         }
+      }
+
+      const reservationTypeMessage = document.getElementById('reservation-type-message')
+      if (reservationTypeMessage) {
+        reservationTypeMessage.textContent = `Foglalás típusa: ${reservationType.label}`
       }
 
       if (slotIso) {
@@ -93,6 +153,21 @@
           eventAnchor.setAttribute('href', eventLink)
           eventAnchor.classList.remove('hidden')
         }
+      }
+
+      const faqTitle = document.getElementById('faq-title')
+      if (faqTitle) {
+        faqTitle.textContent = reservationType.faqTitle
+      }
+
+      const faqItems = document.getElementById('faq-items')
+      if (faqItems) {
+        faqItems.innerHTML = reservationType.faqs.map((faq) => `
+          <article class="rounded-2xl border border-rose-deep/10 bg-white/80 px-5 py-5 shadow-sm">
+            <h3 class="text-xl font-cormorant text-rose-deep">${faq.title}</h3>
+            <p class="mt-3 text-sm leading-7 text-gray-600">${faq.text}</p>
+          </article>
+        `).join('')
       }
     </script>
   </body>
