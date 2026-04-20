@@ -17,12 +17,28 @@ function buildProductAltText(product: Product) {
   return `${product.name} - ${styleLabel} menyasszonyi ruha az extremeruha miskolci szalonjabol`
 }
 
+function toCloudinaryOptimizedUrl(imageUrl: string, width: number) {
+  if (!imageUrl || !imageUrl.includes('res.cloudinary.com') || !imageUrl.includes('/image/upload/')) {
+    return imageUrl
+  }
+
+  if (imageUrl.includes('/image/upload/f_auto,q_auto')) {
+    return imageUrl
+  }
+
+  return imageUrl.replace(
+    '/image/upload/',
+    `/image/upload/f_auto,q_auto,c_limit,dpr_auto,w_${width}/`
+  )
+}
+
 export default function ProductCarousel({ products }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const initializedRef = useRef(false)
   const isDraggingRef = useRef(false)
   const dragStartXRef = useRef(0)
   const dragStartScrollLeftRef = useRef(0)
+  const setWidthRef = useRef(0)
 
   // Repeat the list so users can keep scrolling manually without hitting a hard edge.
   const repeatedProducts = useMemo(() => {
@@ -37,8 +53,13 @@ export default function ProductCarousel({ products }: Props) {
     if (!container || products.length === 0) return
     const el = container
 
+    function updateSetWidth() {
+      setWidthRef.current = el.scrollWidth / 3
+    }
+
     function recenterToMiddleSet() {
-      const setWidth = el.scrollWidth / 3
+      updateSetWidth()
+      const setWidth = setWidthRef.current
       if (setWidth <= 0) return
       el.scrollLeft = setWidth
       initializedRef.current = true
@@ -50,7 +71,7 @@ export default function ProductCarousel({ products }: Props) {
     function handleScroll() {
       if (!initializedRef.current) return
 
-      const setWidth = el.scrollWidth / 3
+      const setWidth = setWidthRef.current
       if (setWidth <= 0) return
 
       const left = el.scrollLeft
@@ -64,12 +85,19 @@ export default function ProductCarousel({ products }: Props) {
       }
     }
 
+    function handleResize() {
+      updateSetWidth()
+    }
+
     el.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleResize)
 
     return () => {
       cancelAnimationFrame(frame)
       el.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
       initializedRef.current = false
+      setWidthRef.current = 0
     }
   }, [products])
 
@@ -120,6 +148,13 @@ export default function ProductCarousel({ products }: Props) {
       <div className="flex gap-4 px-6">
         {repeatedProducts.map((product, index) => {
           const key = `${product._id ?? product.id ?? product.name}-${index}`
+          const optimizedSrc = toCloudinaryOptimizedUrl(product.image, 640)
+          const optimizedSrcSet = [360, 640, 900]
+            .map((width) => `${toCloudinaryOptimizedUrl(product.image, width)} ${width}w`)
+            .join(', ')
+          const centerSetIndex = index - products.length
+          const highPriority = centerSetIndex >= 0 && centerSetIndex < 2
+
           return (
             <article
               key={key}
@@ -129,9 +164,13 @@ export default function ProductCarousel({ products }: Props) {
               <div className="h-1 bg-gradient-to-r from-transparent via-rose-deep/35 to-transparent" />
               <div className="relative aspect-[9/16] w-full overflow-hidden">
                 <img
-                  src={product.image}
+                  src={optimizedSrc}
+                  srcSet={optimizedSrcSet}
+                  sizes="(min-width: 1024px) 220px, (min-width: 640px) 34vw, 80vw"
                   alt={buildProductAltText(product)}
-                  loading="lazy"
+                  loading={highPriority ? 'eager' : 'lazy'}
+                  fetchPriority={highPriority ? 'high' : 'auto'}
+                  decoding="async"
                   draggable={false}
                   className="h-full w-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-[1.02]"
                 />

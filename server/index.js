@@ -667,7 +667,27 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
 })
 
 if (fs.existsSync(distIndexPath)) {
-  app.use(express.static(distDir))
+  app.use(express.static(distDir, {
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      const relativePath = path.relative(distDir, filePath).replace(/\\/g, '/')
+      const isHtml = relativePath.endsWith('.html')
+      const isHashedAsset = /assets\/.+\.[a-f0-9]{8,}\./i.test(relativePath)
+
+      if (isHtml) {
+        res.setHeader('Cache-Control', 'no-cache')
+        return
+      }
+
+      if (isHashedAsset) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+        return
+      }
+
+      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400')
+    },
+  }))
 
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {

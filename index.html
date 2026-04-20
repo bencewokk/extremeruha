@@ -7,7 +7,15 @@
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    >
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap" rel="stylesheet">
+    </noscript>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Extremeruha menyasszonyi ruhaszalon Miskolcon, a Metropolban: privát ruhapróba, kölcsönzés, értékesítés, igazítás és kiegészítők." />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -28,11 +36,24 @@
     <meta name="twitter:description" content="Miskolci menyasszonyi ruhaszalon privát ruhapróbával, kölcsönzéssel, értékesítéssel és igazítási lehetőségekkel." />
     <meta name="twitter:image" content="https://extremeruha.hu/logo.png" />
     <link rel="canonical" href="https://extremeruha.hu/" />
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9354459449958991"
-      crossorigin="anonymous"
-    ></script>
+    <script>
+      // Delay non-critical ad script to reduce initial request chain depth.
+      window.addEventListener('load', () => {
+        const loadAds = () => {
+          const script = document.createElement('script')
+          script.async = true
+          script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9354459449958991'
+          script.crossOrigin = 'anonymous'
+          document.head.appendChild(script)
+        }
+
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(loadAds, { timeout: 2500 })
+        } else {
+          setTimeout(loadAds, 1200)
+        }
+      })
+    </script>
     <title>extremeruha | Menyasszonyi ruhaszalon Miskolc</title>
     <script type="application/ld+json">
     {
