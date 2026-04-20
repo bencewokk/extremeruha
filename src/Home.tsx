@@ -719,7 +719,7 @@ export default function Home() {
       <header className="mx-auto max-w-6xl px-6 py-12">
         <div className="motif-panel rounded-[32px] p-6 lg:p-8">
           <SectionEyebrow>Rólam</SectionEyebrow>
-          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">13 éves korom óta szabok, varrok és tervezek</h1>
+          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Rólam</h1>
           <p className="text-lg text-gray-600 mb-4">
             A szakma nagy részét dédimtől lestem el, tőle tanultam meg a mesterség alapjait és fortélyait. A munkám egyben a hobbim: hihetetlen energiával vetem bele magam minden új tervezésbe, hisz mások boldogsága tölt el örömmel.
           </p>
