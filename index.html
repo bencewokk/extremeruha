@@ -7,12 +7,6 @@
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    >
     <noscript>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap" rel="stylesheet">
     </noscript>
@@ -37,8 +31,24 @@
     <meta name="twitter:image" content="https://extremeruha.hu/logo.png" />
     <link rel="canonical" href="https://extremeruha.hu/" />
     <script>
+      const fontHref = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap'
+
+      function loadFonts() {
+        if (document.querySelector(`link[href="${fontHref}"]`)) return
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = fontHref
+        document.head.appendChild(link)
+      }
+
       // Delay non-critical ad script to reduce initial request chain depth.
       window.addEventListener('load', () => {
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(loadFonts, { timeout: 2000 })
+        } else {
+          setTimeout(loadFonts, 900)
+        }
+
         const loadAds = () => {
           const script = document.createElement('script')
           script.async = true
