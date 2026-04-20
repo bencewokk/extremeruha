@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://extremeruha.hu/logo.png" />
     <link rel="canonical" href="https://extremeruha.hu/" />
     <script>
-      const fontHref = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap'
+      const fontHref = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;600;700&display=swap&font-display=swap'
 
       function loadFonts() {
         if (document.querySelector(`link[href="${fontHref}"]`)) return
@@ -40,13 +40,19 @@
         document.head.appendChild(link)
       }
 
+      // Defer font loading until the page becomes interactive.
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(loadFonts, { timeout: 3000 })
+      } else if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          setTimeout(loadFonts, 100)
+        })
+      } else {
+        setTimeout(loadFonts, 100)
+      }
+
       // Delay non-critical ad script to reduce initial request chain depth.
       window.addEventListener('load', () => {
-        if ('requestIdleCallback' in window) {
-          window.requestIdleCallback(loadFonts, { timeout: 2000 })
-        } else {
-          setTimeout(loadFonts, 900)
-        }
 
         const loadAds = () => {
           const script = document.createElement('script')

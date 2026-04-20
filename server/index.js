@@ -673,10 +673,10 @@ if (fs.existsSync(distIndexPath)) {
     setHeaders: (res, filePath) => {
       const relativePath = path.relative(distDir, filePath).replace(/\\/g, '/')
       const isHtml = relativePath.endsWith('.html')
-      const isHashedAsset = /assets\/.+\.[a-f0-9]{8,}\./i.test(relativePath)
+      const isHashedAsset = /\.[a-f0-9]{8}\.(js|css|woff2|ttf|eot|svg)$/i.test(relativePath)
 
       if (isHtml) {
-        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
         return
       }
 
