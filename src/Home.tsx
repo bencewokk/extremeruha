@@ -721,10 +721,10 @@ export default function Home() {
           <SectionEyebrow>Rólam</SectionEyebrow>
           <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">13 éves korom óta szabok, varrok és tervezek</h1>
           <p className="text-lg text-gray-600 mb-4">
-            A szakma szeretetét dédimtől tanultam. Munkám a hobbim, ezért örömmel segítek megvalósítani álmaid ruháját, akár saját elképzelés, akár közös tervezés alapján.
+            A szakma nagy részét dédimtől lestem el, tőle tanultam meg a mesterség alapjait és fortélyait. A munkám egyben a hobbim: hihetetlen energiával vetem bele magam minden új tervezésbe, hisz mások boldogsága tölt el örömmel.
           </p>
           <p className="text-lg text-gray-600 mb-6">
-            25 éve működő üzletünkben tapasztalt szakértőkkel, szeretettel várunk ruhapróbára, hogy a nagy napon igazán különleges lehess.
+            25 éve működő üzletünkben szeretettel várjuk vendégeinket és vásárlóinkat. Több éves tapasztalattal rendelkező szakértőink személyre szabott tanácsot adnak, hogy egyéniségednek megfelelő ruhát tervezzünk számodra. Ha már vannak kész terveid vagy rajzaid, megvalósítjuk álmaid ruháját — gyere el ruhapróbára, és légy a nagy napon igazi hercegnő!
           </p>
           <div className="mb-8 flex flex-wrap gap-3">
             <MotifBadge>25 éve működő üzlet</MotifBadge>
