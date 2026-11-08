@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { clearAdminToken, getAdminToken, setAdminToken } from './auth'
 import { CloudinarySettings, GoogleCalendarSettings } from './IntegrationSettings'
+import ReservationTypesSettings from './ReservationTypesSettings'
 
-type AdminTab = 'products' | 'cloudinary' | 'google'
+type AdminTab = 'products' | 'reservations' | 'cloudinary' | 'google'
 
 const ADMIN_TABS: { id: AdminTab; label: string }[] = [
   { id: 'products', label: 'Termékek' },
+  { id: 'reservations', label: 'Foglalástípusok' },
   { id: 'cloudinary', label: 'Képtárhely' },
   { id: 'google', label: 'Foglalások (Google Naptár)' },
 ]
@@ -14,7 +16,7 @@ function readInitialAdminState() {
   if (typeof window === 'undefined') return { tab: 'products' as AdminTab, googleNotice: null }
   const params = new URLSearchParams(window.location.search)
   const tabParam = params.get('tab')
-  const tab: AdminTab = tabParam === 'cloudinary' || tabParam === 'google' ? tabParam : 'products'
+  const tab: AdminTab = tabParam === 'cloudinary' || tabParam === 'google' || tabParam === 'reservations' ? tabParam : 'products'
   const googleStatus = params.get('google')
   const googleNotice = googleStatus === 'connected'
     ? { kind: 'ok' as const, text: 'A Google-fiók csatlakoztatva. Kattints a „Kapcsolat tesztelése” gombra az ellenőrzéshez.' }
@@ -262,6 +264,7 @@ export default function Admin() {
             </button>
           ))}
         </nav>
+        {tab === 'reservations' ? <ReservationTypesSettings adminFetch={adminFetch} /> : null}
         {tab === 'cloudinary' ? <CloudinarySettings adminFetch={adminFetch} /> : null}
         {tab === 'google' ? <GoogleCalendarSettings adminFetch={adminFetch} initialNotice={initialState.googleNotice} /> : null}
         {tab === 'products' ? (
