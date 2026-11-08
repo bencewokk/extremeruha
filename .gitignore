@@ -25,3 +25,6 @@ server/.env
 *.njsproj
 *.sln
 *.sw?
+
+# Admin-edited integration settings (when MongoDB is not used)
+server/data/

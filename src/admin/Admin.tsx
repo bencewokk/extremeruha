@@ -1,5 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { clearAdminToken, getAdminToken, setAdminToken } from './auth'
+import { CloudinarySettings, GoogleCalendarSettings } from './IntegrationSettings'
+
+type AdminTab = 'products' | 'cloudinary' | 'google'
+
+const ADMIN_TABS: { id: AdminTab; label: string }[] = [
+  { id: 'products', label: 'Termékek' },
+  { id: 'cloudinary', label: 'Képtárhely' },
+  { id: 'google', label: 'Foglalások (Google Naptár)' },
+]
+
+function readInitialAdminState() {
+  if (typeof window === 'undefined') return { tab: 'products' as AdminTab, googleNotice: null }
+  const params = new URLSearchParams(window.location.search)
+  const tabParam = params.get('tab')
+  const tab: AdminTab = tabParam === 'cloudinary' || tabParam === 'google' ? tabParam : 'products'
+  const googleStatus = params.get('google')
+  const googleNotice = googleStatus === 'connected'
+    ? { kind: 'ok' as const, text: 'A Google-fiók csatlakoztatva. Kattints a „Kapcsolat tesztelése” gombra az ellenőrzéshez.' }
+    : googleStatus === 'error'
+      ? { kind: 'error' as const, text: `A csatlakoztatás nem sikerült: ${params.get('message') || 'ismeretlen hiba'}` }
+      : null
+
+  return { tab, googleNotice }
+}
 
 type Product = {
   _id?: string
@@ -18,6 +42,13 @@ export default function Admin() {
   const [form, setForm] = useState<Product>({ name: '', style: '', image: '' })
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [initialState] = useState(readInitialAdminState)
+  const [tab, setTab] = useState<AdminTab>(initialState.tab)
+
+  useEffect(() => {
+    // Drop ?tab=…&google=… (set by the Google OAuth callback) once it has been read.
+    if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
+  }, [])
 
   useEffect(() => {
     if (!token) {
@@ -55,7 +86,7 @@ export default function Admin() {
     return fallback
   }
 
-  async function adminFetch(input: RequestInfo | URL, init?: RequestInit) {
+  const adminFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
     if (!token) {
       throw new Error('A folytatáshoz jelentkezz be.')
     }
@@ -69,7 +100,7 @@ export default function Admin() {
     }
 
     return response
-  }
+  }, [token])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -214,11 +245,26 @@ export default function Admin() {
     <div className="min-h-screen bg-ivory font-jost">
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-cormorant text-rose-deep">Admin - Termékek</h1>
+          <h1 className="text-3xl font-cormorant text-rose-deep">Admin</h1>
           <button className="text-sm border rounded px-3 py-1 bg-white" onClick={() => handleLogout()}>
             Kijelentkezés
           </button>
         </div>
+        <nav className="mb-6 flex flex-wrap gap-2">
+          {ADMIN_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${tab === t.id ? 'bg-rose-deep text-white' : 'border border-rose-deep/20 bg-white text-rose-deep'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+        {tab === 'cloudinary' ? <CloudinarySettings adminFetch={adminFetch} /> : null}
+        {tab === 'google' ? <GoogleCalendarSettings adminFetch={adminFetch} initialNotice={initialState.googleNotice} /> : null}
+        {tab === 'products' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="space-y-3">
@@ -255,6 +301,7 @@ export default function Admin() {
             </form>
           </aside>
         </div>
+        ) : null}
       </div>
     </div>
   )
