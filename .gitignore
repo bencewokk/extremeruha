@@ -28,3 +28,6 @@ server/.env
 
 # Admin-edited integration settings (when MongoDB is not used)
 server/data/
+
+# Vercel CLI
+.vercel
