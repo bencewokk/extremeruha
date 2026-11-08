@@ -10,7 +10,6 @@ import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { v2 as cloudinary } from 'cloudinary'
-import seedData from './seed-data.json' with { type: 'json' }
 import { loadSettings, getStoredSettings, updateSettingsSection, clearSettingsSection } from './settingsStore.js'
 import { DEFAULT_RESERVATION_TYPES, SLOT_STEP_MINUTES, sanitizeReservationTypes, withDerivedDefaults } from './reservationTypes.js'
 import {
@@ -33,25 +32,12 @@ app.set('trust proxy', true)
 app.use(cors())
 app.use(express.json())
 
-// Vercel routes /api/* to the function as /api?path=<rest> (see vercel.json).
-// Normally req.url keeps the original path; this covers the case where it doesn't.
-app.use((req, res, next) => {
-  if (req.url.startsWith('/api?') || req.url === '/api') {
-    const url = new URL(req.url, 'http://localhost')
-    const rest = url.searchParams.get('path')
-    if (rest !== null) {
-      url.searchParams.delete('path')
-      req.url = `/api/${rest}${url.search}`
-    }
-  }
-  next()
-})
-
+const seedDataPath = path.join(process.cwd(), 'server', 'seed-data.json')
 const distDir = path.join(process.cwd(), 'dist')
 const distIndexPath = path.join(distDir, 'index.html')
 import fs from 'fs'
 
-const seededProducts = seedData.map((product) => ({
+const seededProducts = JSON.parse(fs.readFileSync(seedDataPath, 'utf8')).map((product) => ({
   ...product,
   _id: product.id || randomUUID(),
 }))
@@ -397,65 +383,12 @@ function requireAdminAuth(req, res, next) {
   next()
 }
 
-// On Vercel every request may hit a fresh, short-lived instance, and several
-// instances can run at once. So: connect lazily and make requests wait for it,
-// and re-read admin settings regularly so a change saved on one instance is
-// picked up by the others.
-const IS_SERVERLESS = Boolean(process.env.VERCEL)
-const MONGO = process.env.MONGO_URI || (IS_SERVERLESS ? '' : 'mongodb://127.0.0.1:27017/bridal')
-const SETTINGS_REFRESH_MS = 15 * 1000
+const MONGO = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bridal'
 mongoose.set('bufferCommands', false)
-
-let dbReadyPromise = null
-let settingsLoadedAt = 0
-
-async function refreshSettings() {
-  try {
-    await loadSettings()
-    settingsLoadedAt = Date.now()
-  } catch (error) {
-    console.error('Could not load admin settings', error)
-  }
-}
-
-function ensureDbReady() {
-  if (!dbReadyPromise) {
-    dbReadyPromise = (async () => {
-      try {
-        if (!MONGO) throw new Error('MONGO_URI is not set')
-        await mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 })
-        enableMongoProducts()
-      } catch (error) {
-        enableInMemoryProducts(error)
-        // On serverless, try again on a later request instead of giving up.
-        if (IS_SERVERLESS) setTimeout(() => { dbReadyPromise = null }, 10 * 1000)
-      }
-      await refreshSettings()
-    })()
-  }
-  return dbReadyPromise
-}
-
-if (!IS_SERVERLESS) ensureDbReady()
-
-app.use('/api', async (req, res, next) => {
-  await ensureDbReady()
-  if (IS_SERVERLESS && Date.now() - settingsLoadedAt > SETTINGS_REFRESH_MS) {
-    await refreshSettings()
-  }
-  next()
-})
-
-// Without MongoDB nothing can be saved on Vercel (no writable disk), so say
-// so clearly instead of pretending to save into memory.
-app.use('/api', (req, res, next) => {
-  const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(req.method)
-  const needsDb = (req.path.startsWith('/admin/') && req.path !== '/admin/login') || req.path.startsWith('/products')
-  if (IS_SERVERLESS && isWrite && needsDb && mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ error: 'Az adatbázis (MongoDB) nem elérhető, ezért most nem lehet menteni. Ellenőrizd a MONGO_URI beállítást a Vercelen.' })
-  }
-  next()
-})
+mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 })
+  .then(() => enableMongoProducts())
+  .catch((err) => enableInMemoryProducts(err))
+  .finally(() => loadSettings().catch((error) => console.error('Could not load admin settings', error)))
 
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {}
@@ -798,7 +731,7 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
 const ALLOWED_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 4 * 1024 * 1024 }, // Vercel caps request bodies at 4.5 MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
       cb(null, true)
@@ -1146,7 +1079,7 @@ app.post('/api/admin/settings/google/test', requireAdminAuth, async (req, res) =
   }
 })
 
-if (!process.env.VERCEL && fs.existsSync(distIndexPath)) {
+if (fs.existsSync(distIndexPath)) {
   app.use(express.static(distDir, {
     etag: true,
     lastModified: true,
@@ -1178,10 +1111,5 @@ if (!process.env.VERCEL && fs.existsSync(distIndexPath)) {
   })
 }
 
-if (!IS_SERVERLESS) {
-  const port = process.env.PORT || 4000
-  app.listen(port, () => console.log(`Server running on ${port}`))
-}
-
-// Used by api/index.js as the Vercel serverless function.
-export default app
+const port = process.env.PORT || 4000
+app.listen(port, () => console.log(`Server running on ${port}`))

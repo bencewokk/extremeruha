@@ -1,7 +1,5 @@
 # Handing the site over to the owner
 
-> Hosting on Vercel? Do [VERCEL.md](VERCEL.md) first, then come back here.
-
 The owner switches the site to **his own accounts** from the admin panel, so he
 doesn't need to touch the code or the server.
 
@@ -16,8 +14,7 @@ npm run admin:password -- <username> <new-password>
 
 Copy the three lines it prints (`ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`,
 `JWT_SECRET`) into `server/.env`, or into the hosting provider's environment
-variables (on Vercel: Project → Settings → Environment Variables, then
-redeploy). Remove any `ADMIN_PASSWORD=` line, then restart the server. Give the
+variables. Remove any `ADMIN_PASSWORD=` line, then restart the server. Give the
 owner the username and password.
 
 > If your host expands `$` in env values (e.g. docker-compose), wrap the hash
