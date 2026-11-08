@@ -812,7 +812,7 @@ export default function Home() {
             <MotifBadge>Privát ruhapróba</MotifBadge>
           </div>
           <div className="flex flex-wrap gap-4">
-            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekció megnézése</a>
+            <a href="#services" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Szolgáltatásaink</a>
             <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Időpont foglalása</a>
           </div>
         </div>
