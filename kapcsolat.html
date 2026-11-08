@@ -35,9 +35,11 @@
             <p><strong class="text-rose-deep">Telefon:</strong> <a href="tel:+36706138891" class="hover:text-rose-deep">06 70 613 8891</a></p>
             <p><strong class="text-rose-deep">Facebook:</strong> <a href="https://www.facebook.com/Menyasszonyi/?locale=hu_HU" target="_blank" rel="noreferrer" class="hover:text-rose-deep">Menyasszonyi oldal</a></p>
             <p class="pt-3"><strong class="text-rose-deep">Nyitvatartás:</strong></p>
-            <p>Hétfő-Péntek: 10:00 - 17:00</p>
-            <p>Szombat: 09:00 - 13:00</p>
-            <p>Vasárnap: Zárva</p>
+            <div id="opening-hours">
+              <p>Hétfő-Péntek: 10:00 - 17:00</p>
+              <p>Szombat: 09:00 - 13:00</p>
+              <p>Vasárnap: Zárva</p>
+            </div>
           </section>
           <section class="rounded-[28px] border border-rose-deep/10 bg-white/80 p-5 shadow-sm text-sm leading-8 text-gray-600">
             <h2 class="text-2xl font-cormorant text-rose-deep">Miért hasznos ez az oldal?</h2>
@@ -59,5 +61,34 @@
         </div>
       </div>
     </main>
+    <script>
+      // Opening hours are editable in /admin; the static text above is the fallback.
+      (function () {
+        const days = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
+        const esc = (v) => String(v || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+        fetch('/api/booking-schedule')
+          .then((res) => (res.ok ? res.json() : null))
+          .then((schedule) => {
+            const box = document.getElementById('opening-hours')
+            if (!box || !schedule || !Array.isArray(schedule.weekly) || schedule.weekly.length !== 7) return
+            const key = (d) => (d.open ? d.from + '-' + d.to : 'closed')
+            const rows = []
+            let start = 0
+            for (let i = 1; i <= 7; i++) {
+              if (i < 7 && key(schedule.weekly[i]) === key(schedule.weekly[start])) continue
+              const label = start === i - 1 ? days[start] : days[start] + '–' + days[i - 1]
+              const d = schedule.weekly[start]
+              rows.push('<p>' + label + ': ' + (d.open ? esc(d.from) + ' – ' + esc(d.to) : 'Zárva') + '</p>')
+              start = i
+            }
+            const fmt = (v) => new Date(v + 'T12:00:00').toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' })
+            const closed = (schedule.closedDates || []).slice(0, 3).map((r) =>
+              '<p>' + (r.from === r.to ? fmt(r.from) : fmt(r.from) + ' – ' + fmt(r.to)) + (r.note ? ' (' + esc(r.note) + ')' : '') + '</p>')
+            if (closed.length) rows.push('<p class="pt-2"><strong class="text-rose-deep">Zárva tartunk:</strong></p>' + closed.join(''))
+            box.innerHTML = rows.join('')
+          })
+          .catch(() => {})
+      })()
+    </script>
   </body>
 </html>

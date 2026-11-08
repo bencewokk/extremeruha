@@ -330,7 +330,7 @@ export function GoogleCalendarSettings({ adminFetch, initialNotice }: { adminFet
       <div className="space-y-4">
         <div className="rounded border bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-2xl font-cormorant text-rose-deep">Foglalások (Google Naptár)</h2>
+            <h2 className="text-2xl font-cormorant text-rose-deep">Google Naptár</h2>
             <SourceBadge source={g.activeSource} label={g.activeSource === 'admin' ? g.connectedEmail || undefined : undefined} />
           </div>
           <p className="mb-4 text-sm text-gray-600">

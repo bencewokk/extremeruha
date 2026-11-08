@@ -12,6 +12,16 @@ import bcrypt from 'bcryptjs'
 import { v2 as cloudinary } from 'cloudinary'
 import { loadSettings, getStoredSettings, updateSettingsSection, clearSettingsSection } from './settingsStore.js'
 import { DEFAULT_RESERVATION_TYPES, SLOT_STEP_MINUTES, sanitizeReservationTypes, withDerivedDefaults } from './reservationTypes.js'
+import {
+  SCHEDULE_TIME_ZONE,
+  WEEKDAY_NAMES_EN,
+  addDays,
+  dateStringInZone,
+  earliestBookableStart,
+  getDayWindow,
+  normalizeSchedule,
+  sanitizeSchedule,
+} from './bookingSchedule.js'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
@@ -455,24 +465,59 @@ app.post('/api/products', requireAdminAuth, async (req, res) => {
   }
 })
 
-app.get('/api/bookings/availability', async (req, res) => {
-  const { fromIso, toIso, timeZone, reservationType: reservationTypeId } = req.query
-  const from = new Date(fromIso)
-  const to = new Date(toIso)
-  const reservationType = resolveReservationType(reservationTypeId)
+function getBookingSchedule() {
+  return normalizeSchedule(getStoredSettings().bookingSchedule)
+}
 
-  if (!fromIso || !toIso || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from >= to) {
-    return res.status(400).json({ error: 'A fromIso es toIso kotelezo, es ervenyes idotartomanyt kell megadni' })
+function roundUpToStep(date, stepMinutes) {
+  const stepMs = stepMinutes * 60 * 1000
+  return new Date(Math.ceil(date.getTime() / stepMs) * stepMs)
+}
+
+// ?date=YYYY-MM-DD (salon-local day). Hours, closed days, notice and the
+// booking horizon all come from the schedule set in /admin.
+app.get('/api/bookings/availability', async (req, res) => {
+  const { reservationType: reservationTypeId } = req.query
+  const reservationType = resolveReservationType(reservationTypeId)
+  const schedule = getBookingSchedule()
+  const now = new Date()
+
+  // Older cached pages still send fromIso; derive the day from it.
+  const dateStr = typeof req.query.date === 'string' && req.query.date
+    ? req.query.date
+    : (req.query.fromIso && !Number.isNaN(new Date(req.query.fromIso).getTime()) ? dateStringInZone(new Date(req.query.fromIso)) : '')
+
+  if (!dateStr) {
+    return res.status(400).json({ error: 'Hiányzó dátum.' })
   }
 
   if (!reservationType) {
     return res.status(400).json({ error: 'Ez a foglalástípus jelenleg nem elérhető. Kérlek válassz másikat.' })
   }
 
+  const dayWindow = getDayWindow(schedule, dateStr, now)
+  const basePayload = {
+    stepMinutes: SLOT_STEP_MINUTES,
+    durationMinutes: reservationType.durationMinutes,
+    reservationType: buildReservationTypePayload(reservationType),
+  }
+
+  if (dayWindow.closed) {
+    return res.json({ ...basePayload, slots: [], closed: true, message: dayWindow.message })
+  }
+
+  const earliest = roundUpToStep(earliestBookableStart(schedule, now), SLOT_STEP_MINUTES)
+  const from = dayWindow.from > earliest ? dayWindow.from : earliest
+  const to = dayWindow.to
+
+  if (from.getTime() + reservationType.durationMinutes * 60 * 1000 > to.getTime()) {
+    return res.json({ ...basePayload, slots: [], closed: false, message: 'Erre a napra már nem lehet foglalni. Kérlek válassz egy későbbi napot.' })
+  }
+
   const calendarConfig = getGoogleCalendarConfig()
   const calendar = getCalendarClient(calendarConfig)
   const calendarId = calendarConfig?.calendarId
-  const normalizedTimeZone = timeZone || calendarConfig?.timeZone || 'Europe/Budapest'
+  const normalizedTimeZone = calendarConfig?.timeZone || SCHEDULE_TIME_ZONE
 
   if (!calendar || !calendarId) {
     return res.status(503).json({ error: 'A Google Naptar nincs beallitva a szerveren' })
@@ -488,12 +533,7 @@ app.get('/api/bookings/availability', async (req, res) => {
       durationMinutes: reservationType.durationMinutes,
     })
 
-    return res.json({
-      slots,
-      stepMinutes: SLOT_STEP_MINUTES,
-      durationMinutes: reservationType.durationMinutes,
-      reservationType: buildReservationTypePayload(reservationType),
-    })
+    return res.json({ ...basePayload, slots, closed: false })
   } catch (error) {
     console.error('Google Calendar availability check failed', error)
     return res.status(502).json({ error: 'Nem sikerult betolteni a szabad idopontokat a Google Naptarbol' })
@@ -524,6 +564,20 @@ app.post('/api/bookings', async (req, res) => {
   }
 
   const end = new Date(start.getTime() + reservationType.durationMinutes * 60 * 1000)
+
+  // Enforce opening hours, closed days, notice and horizon on the server too.
+  const schedule = getBookingSchedule()
+  const dayWindow = getDayWindow(schedule, dateStringInZone(start), new Date())
+  if (dayWindow.closed) {
+    return res.status(400).json({ error: dayWindow.message })
+  }
+  if (start < dayWindow.from || end > dayWindow.to) {
+    return res.status(400).json({ error: 'A választott időpont kívül esik a nyitvatartáson.' })
+  }
+  if (start < earliestBookableStart(schedule)) {
+    return res.status(400).json({ error: `Legalább ${schedule.minNoticeHours} órával előre kell foglalni.` })
+  }
+
   const fallbackUrl = buildFallbackCalendarUrl({
     reservationType,
     name,
@@ -721,6 +775,40 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
 
     uploadStream.end(req.file.buffer)
   })
+})
+
+// ---- Booking schedule (opening hours, closed days) ----
+
+function buildPublicSchedule() {
+  const schedule = getBookingSchedule()
+  const today = dateStringInZone(new Date())
+  return {
+    timeZone: SCHEDULE_TIME_ZONE,
+    today,
+    lastDate: addDays(today, schedule.maxDaysAhead),
+    weekly: schedule.weekly,
+    closedDates: schedule.closedDates.filter((range) => range.to >= today),
+    minNoticeHours: schedule.minNoticeHours,
+    maxDaysAhead: schedule.maxDaysAhead,
+    weekdayNamesEn: WEEKDAY_NAMES_EN,
+  }
+}
+
+app.get('/api/booking-schedule', (req, res) => {
+  res.set('Cache-Control', 'no-cache')
+  res.json(buildPublicSchedule())
+})
+
+app.get('/api/admin/booking-schedule', requireAdminAuth, (req, res) => {
+  res.json({ ...getBookingSchedule(), isDefault: !getStoredSettings().bookingSchedule })
+})
+
+app.put('/api/admin/booking-schedule', requireAdminAuth, async (req, res) => {
+  const result = sanitizeSchedule(req.body)
+  if (result.error) return res.status(400).json({ error: result.error })
+
+  await updateSettingsSection('bookingSchedule', result.schedule)
+  res.json({ ...getBookingSchedule(), isDefault: false })
 })
 
 // ---- Booking types ----

@@ -53,21 +53,66 @@ function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function getBusinessWindow(dateInput: string) {
-  const [year, month, day] = dateInput.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
+// Opening hours / closed days come from /api/booking-schedule (editable in
+// /admin). This fallback mirrors the defaults until the API answers.
+type ScheduleDay = { open: boolean; from: string; to: string }
+type ClosedRange = { from: string; to: string; note: string }
+type BookingSchedule = {
+  today: string
+  lastDate: string
+  weekly: ScheduleDay[] // 0 = Monday … 6 = Sunday
+  closedDates: ClosedRange[]
+}
 
-  if (Number.isNaN(date.getTime())) return null
+const WEEKDAY_LABELS = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
+const WEEKDAY_SCHEMA = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-  const weekDay = date.getDay()
-  if (weekDay === 0) return null // Sunday closed
+const FALLBACK_SCHEDULE: BookingSchedule = {
+  today: toDateInputValue(new Date()),
+  lastDate: '',
+  weekly: [
+    ...Array.from({ length: 5 }, () => ({ open: true, from: '10:00', to: '17:00' })),
+    { open: true, from: '09:00', to: '13:00' },
+    { open: false, from: '10:00', to: '17:00' },
+  ],
+  closedDates: [],
+}
 
-  const openHour = weekDay === 6 ? 9 : 10
-  const closeHour = weekDay === 6 ? 13 : 17
+function addDaysToDateString(dateStr: string, days: number) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
+}
 
-  const from = new Date(year, month - 1, day, openHour, 0, 0, 0)
-  const to = new Date(year, month - 1, day, closeHour, 0, 0, 0)
-  return { from, to }
+function weekdayIndexOf(dateStr: string) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
+}
+
+function isDateBookable(schedule: BookingSchedule, dateStr: string) {
+  if (dateStr < schedule.today || (schedule.lastDate && dateStr > schedule.lastDate)) return false
+  if (schedule.closedDates.some((range) => range.from <= dateStr && dateStr <= range.to)) return false
+  return Boolean(schedule.weekly[weekdayIndexOf(dateStr)]?.open)
+}
+
+// Groups consecutive days with identical hours: "Hétfő–Péntek: 10:00 – 17:00"
+function describeOpeningHours(weekly: ScheduleDay[]) {
+  const key = (day: ScheduleDay) => (day.open ? `${day.from}-${day.to}` : 'closed')
+  const rows: { label: string; hours: string }[] = []
+  let start = 0
+  for (let i = 1; i <= weekly.length; i += 1) {
+    if (i < weekly.length && key(weekly[i]) === key(weekly[start])) continue
+    const label = start === i - 1 ? WEEKDAY_LABELS[start] : `${WEEKDAY_LABELS[start]}–${WEEKDAY_LABELS[i - 1]}`
+    const day = weekly[start]
+    rows.push({ label, hours: day.open ? `${day.from} – ${day.to}` : 'Zárva' })
+    start = i
+  }
+  return rows
+}
+
+function formatClosedRange(range: ClosedRange) {
+  const fmt = (value: string) => new Date(`${value}T12:00:00`).toLocaleDateString('hu-HU', { month: 'long', day: 'numeric' })
+  const dates = range.from === range.to ? fmt(range.from) : `${fmt(range.from)} – ${fmt(range.to)}`
+  return range.note ? `${dates} (${range.note})` : dates
 }
 
 function formatSlotLabel(slotIso: string) {
@@ -315,6 +360,8 @@ export default function Home() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingAvailability, setLoadingAvailability] = useState(false)
   const [availabilityError, setAvailabilityError] = useState('')
+  const [availabilityMessage, setAvailabilityMessage] = useState('')
+  const [schedule, setSchedule] = useState<BookingSchedule>(FALLBACK_SCHEDULE)
   const [products, setProducts] = useState<Product[]>([])
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => Boolean(getAdminToken()))
@@ -329,6 +376,35 @@ export default function Home() {
   const [reviewsError, setReviewsError] = useState('')
   const [reviewsStale, setReviewsStale] = useState(false)
   const [reservationTypes, setReservationTypes] = useState<ReservationTypeConfig[]>(FALLBACK_RESERVATION_TYPE_LIST)
+
+  useEffect(() => {
+    let isActive = true
+
+    fetch('/api/booking-schedule')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((payload) => {
+        if (!isActive || !Array.isArray(payload?.weekly) || payload.weekly.length !== 7) return
+        const next: BookingSchedule = {
+          today: payload.today,
+          lastDate: payload.lastDate,
+          weekly: payload.weekly,
+          closedDates: Array.isArray(payload.closedDates) ? payload.closedDates : [],
+        }
+        setSchedule(next)
+
+        // Start on the first day people can actually book.
+        setSelectedDate((current) => {
+          if (isDateBookable(next, current)) return current
+          for (let i = 0, day = next.today; i < 60; i += 1, day = addDaysToDateString(day, 1)) {
+            if (isDateBookable(next, day)) return day
+          }
+          return current < next.today ? next.today : current
+        })
+      })
+      .catch((error) => console.error('Failed to load booking schedule, using defaults', error))
+
+    return () => { isActive = false }
+  }, [])
   const selectedReservationType = reservationTypes.find((type) => type.id === form.reservationType) || reservationTypes[0]
 
   useEffect(() => {
@@ -551,20 +627,11 @@ export default function Home() {
         addressRegion: BUSINESS_REGION,
         addressCountry: 'HU',
       },
-      openingHoursSpecification: [
-        {
-          '@type': 'OpeningHoursSpecification',
-          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-          opens: '10:00',
-          closes: '17:00',
-        },
-        {
-          '@type': 'OpeningHoursSpecification',
-          dayOfWeek: 'Saturday',
-          opens: '09:00',
-          closes: '13:00',
-        },
-      ],
+      openingHoursSpecification: schedule.weekly.flatMap((day, index) => (
+        day.open
+          ? [{ '@type': 'OpeningHoursSpecification', dayOfWeek: WEEKDAY_SCHEMA[index], opens: day.from, closes: day.to }]
+          : []
+      )),
       hasMap: reviewsPlace?.googleMapsUri || undefined,
       sameAs: reviewsPlace?.googleMapsUri ? [FACEBOOK_URL, reviewsPlace.googleMapsUri] : [FACEBOOK_URL],
       makesOffer: [
@@ -602,7 +669,7 @@ export default function Home() {
     }
 
     jsonLdScript.textContent = JSON.stringify(schema)
-  }, [heroProduct?.image, reviewsPlace, visibleReviews])
+  }, [heroProduct?.image, reviewsPlace, visibleReviews, schedule.weekly])
 
   function toggleTag(tag: string) {
     setActiveTags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]))
@@ -613,23 +680,20 @@ export default function Home() {
   }
 
   async function loadAvailabilityForDate(dateValue: string, preferredSlot = '', reservationTypeId = form.reservationType) {
-    const window = getBusinessWindow(dateValue)
-    if (!window) {
+    if (!dateValue) {
       setAvailableSlots([])
-      setAvailabilityError('')
+      setAvailabilityMessage('')
       setForm((s) => ({ ...s, startDateTime: '' }))
       return
     }
 
     setLoadingAvailability(true)
     setAvailabilityError('')
+    setAvailabilityMessage('')
 
     try {
-      const clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Budapest'
       const params = new URLSearchParams({
-        fromIso: window.from.toISOString(),
-        toIso: window.to.toISOString(),
-        timeZone: clientTimeZone,
+        date: dateValue,
         reservationType: reservationTypeId,
       })
 
@@ -642,6 +706,7 @@ export default function Home() {
 
       const slots = Array.isArray(payload?.slots) ? payload.slots : []
       setAvailableSlots(slots)
+      setAvailabilityMessage(typeof payload?.message === 'string' ? payload.message : '')
 
       const nextSlot = preferredSlot && slots.includes(preferredSlot)
         ? preferredSlot
@@ -886,6 +951,8 @@ export default function Home() {
               <input
                 type="date"
                 value={selectedDate}
+                min={schedule.today}
+                max={schedule.lastDate || undefined}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="elegant-field"
                 required
@@ -898,7 +965,7 @@ export default function Home() {
               ) : availabilityError ? (
                 <p className="text-sm text-red-600">{availabilityError}</p>
               ) : availableSlots.length === 0 ? (
-                <p className="text-sm text-gray-500">Erre a napra nincs szabad időpont.</p>
+                <p className="text-sm text-gray-500">{availabilityMessage || 'Erre a napra nincs szabad időpont.'}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {availableSlots.map((slot) => {
@@ -1073,9 +1140,17 @@ export default function Home() {
 
             <div className="mt-5 border-t border-rose-deep/10 pt-4 text-sm text-gray-600">
               <p className="mb-3 flex items-center gap-3 font-semibold text-rose-deep"><IconShell><ClockIcon /></IconShell><span>Nyitvatartás</span></p>
-              <p>Hétfő-Péntek: 10:00 - 17:00</p>
-              <p>Szombat: 09:00 - 13:00</p>
-              <p>Vasárnap: Zárva</p>
+              {describeOpeningHours(schedule.weekly).map((row) => (
+                <p key={row.label}>{row.label}: {row.hours}</p>
+              ))}
+              {schedule.closedDates.length > 0 ? (
+                <div className="mt-3">
+                  <p className="font-semibold text-rose-deep">Zárva tartunk:</p>
+                  {schedule.closedDates.slice(0, 3).map((range) => (
+                    <p key={`${range.from}-${range.to}`}>{formatClosedRange(range)}</p>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 

@@ -28,7 +28,7 @@ always correct.
 He enters his own Cloudinary Cloud name, API Key and API Secret. The keys are
 checked before they're saved. The step-by-step guide is right next to the form.
 
-## 2. Bookings: `/admin` → **Foglalások (Google Naptár)**
+## 2. Bookings: `/admin` → **Google Naptár**
 
 He creates an OAuth client in his own Google Cloud project, pastes the Client
 ID and secret, and clicks **Google-fiók csatlakoztatása**. The refresh token is
@@ -37,7 +37,15 @@ on-page guide covers every Google Console click, including putting the app
 **In production** (in "Testing" mode Google expires the connection after 7
 days).
 
-## 3. Booking types: `/admin` → **Foglalástípusok**
+## 3. Opening hours: `/admin` → **Foglalások** → "Mikor lehet foglalni?"
+
+Weekly opening hours, closed days/holidays (with an optional note shown on the
+site), minimum notice and how far ahead people can book. The server enforces
+these on every booking (in Europe/Budapest time). The homepage and the contact
+page show the same hours. For one-off busy hours he can just add an event to
+his Google Calendar.
+
+## 4. Booking types: `/admin` → **Foglalások**
 
 He can add, rename, reorder, switch off or delete the kinds of appointment
 people can book (Ruhapróba, consultations, ...), and set each one's length and
@@ -58,7 +66,7 @@ types are used. Renaming keeps a type's internal id, so old links keep working.
   in the currently configured cloud. Old images in the previous account are
   left alone.
 
-## 4. After he's switched over
+## 5. After he's switched over
 
 Revoke your old access: delete your Google OAuth client / revoke the token,
 rotate your Cloudinary API secret, and remove the old values from `server/.env`.

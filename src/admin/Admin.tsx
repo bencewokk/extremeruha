@@ -2,14 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { clearAdminToken, getAdminToken, setAdminToken } from './auth'
 import { CloudinarySettings, GoogleCalendarSettings } from './IntegrationSettings'
 import ReservationTypesSettings from './ReservationTypesSettings'
+import BookingScheduleSettings from './BookingScheduleSettings'
 
 type AdminTab = 'products' | 'reservations' | 'cloudinary' | 'google'
 
 const ADMIN_TABS: { id: AdminTab; label: string }[] = [
   { id: 'products', label: 'Termékek' },
-  { id: 'reservations', label: 'Foglalástípusok' },
+  { id: 'reservations', label: 'Foglalások' },
   { id: 'cloudinary', label: 'Képtárhely' },
-  { id: 'google', label: 'Foglalások (Google Naptár)' },
+  { id: 'google', label: 'Google Naptár' },
 ]
 
 function readInitialAdminState() {
@@ -264,7 +265,12 @@ export default function Admin() {
             </button>
           ))}
         </nav>
-        {tab === 'reservations' ? <ReservationTypesSettings adminFetch={adminFetch} /> : null}
+        {tab === 'reservations' ? (
+          <div className="space-y-8">
+            <BookingScheduleSettings adminFetch={adminFetch} />
+            <ReservationTypesSettings adminFetch={adminFetch} />
+          </div>
+        ) : null}
         {tab === 'cloudinary' ? <CloudinarySettings adminFetch={adminFetch} /> : null}
         {tab === 'google' ? <GoogleCalendarSettings adminFetch={adminFetch} initialNotice={initialState.googleNotice} /> : null}
         {tab === 'products' ? (
