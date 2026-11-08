@@ -2,10 +2,18 @@ import express from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
-import Product from './models/Product.js'
+import {
+  ProductError,
+  createProduct,
+  deleteProduct,
+  listProducts,
+  reorderProducts,
+  seedMemoryProducts,
+  updateProduct,
+} from './productStore.js'
 import path from 'path'
 import multer from 'multer'
-import { randomUUID, createHash } from 'crypto'
+import { createHash } from 'crypto'
 import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
@@ -37,21 +45,11 @@ const distDir = path.join(process.cwd(), 'dist')
 const distIndexPath = path.join(distDir, 'index.html')
 import fs from 'fs'
 
-const seededProducts = JSON.parse(fs.readFileSync(seedDataPath, 'utf8')).map((product) => ({
-  ...product,
-  _id: product.id || randomUUID(),
-}))
-let inMemoryProducts = [...seededProducts]
-let useInMemoryProducts = true
+seedMemoryProducts(JSON.parse(fs.readFileSync(seedDataPath, 'utf8')))
 
-function enableInMemoryProducts(error) {
-  useInMemoryProducts = true
-  if (error) console.error('MongoDB unavailable, using in-memory products instead.', error)
-}
-
-function enableMongoProducts() {
-  useInMemoryProducts = false
-  console.log('MongoDB connected')
+function logMongoStatus(error) {
+  if (error) console.error('MongoDB unavailable.', process.env.MONGO_URI ? 'Product changes are refused until it is back.' : 'No MONGO_URI: using in-memory demo products.', error.message)
+  else console.log('MongoDB connected')
 }
 
 function formatGoogleDate(value) {
@@ -386,8 +384,8 @@ function requireAdminAuth(req, res, next) {
 const MONGO = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/bridal'
 mongoose.set('bufferCommands', false)
 mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 })
-  .then(() => enableMongoProducts())
-  .catch((err) => enableInMemoryProducts(err))
+  .then(() => logMongoStatus())
+  .catch((err) => logMongoStatus(err))
   .finally(() => loadSettings().catch((error) => console.error('Could not load admin settings', error)))
 
 app.post('/api/admin/login', async (req, res) => {
@@ -416,17 +414,36 @@ app.post('/api/admin/login', async (req, res) => {
   }
 })
 
-app.get('/api/products', async (req, res) => {
-  if (useInMemoryProducts) {
-    return res.json(inMemoryProducts)
-  }
+function sendProductError(res, error, fallback) {
+  if (error instanceof ProductError) return res.status(error.status).json({ error: error.message })
+  if (error?.name === 'ValidationError') return res.status(400).json({ error: 'Hibás adatok: ' + Object.values(error.errors || {}).map((e) => e.message).join(', ') })
+  console.error(fallback, error)
+  return res.status(500).json({ error: `${fallback}. Próbáld újra.` })
+}
 
+// Public: visible dresses in collection order.
+app.get('/api/products', async (req, res) => {
   try {
-    const products = await Product.find().lean()
-    res.json(products)
-  } catch (err) {
-    enableInMemoryProducts(err)
-    res.json(inMemoryProducts)
+    res.set('Cache-Control', 'no-cache')
+    res.json(await listProducts())
+  } catch (error) {
+    sendProductError(res, error, 'A kollekció nem tölthető be')
+  }
+})
+
+app.get('/api/admin/products', requireAdminAuth, async (req, res) => {
+  try {
+    res.json(await listProducts({ includeHidden: true }))
+  } catch (error) {
+    sendProductError(res, error, 'A ruhák nem tölthetők be')
+  }
+})
+
+app.put('/api/admin/products/order', requireAdminAuth, async (req, res) => {
+  try {
+    res.json(await reorderProducts(req.body?.ids))
+  } catch (error) {
+    sendProductError(res, error, 'A sorrend mentése nem sikerült')
   }
 })
 
@@ -448,20 +465,10 @@ app.get('/api/reviews', async (req, res) => {
 })
 
 app.post('/api/products', requireAdminAuth, async (req, res) => {
-  if (useInMemoryProducts) {
-    const doc = { ...req.body, _id: randomUUID() }
-    inMemoryProducts = [doc, ...inMemoryProducts]
-    return res.status(201).json(doc)
-  }
-
   try {
-    const doc = await Product.create(req.body)
-    res.status(201).json(doc)
-  } catch (err) {
-    enableInMemoryProducts(err)
-    const doc = { ...req.body, _id: randomUUID() }
-    inMemoryProducts = [doc, ...inMemoryProducts]
-    res.status(201).json(doc)
+    res.status(201).json(await createProduct(req.body))
+  } catch (error) {
+    sendProductError(res, error, 'A ruha mentése nem sikerült')
   }
 })
 
@@ -656,26 +663,13 @@ app.post('/api/bookings', async (req, res) => {
 })
 
 app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
-  if (useInMemoryProducts) {
-    const index = inMemoryProducts.findIndex((product) => product._id === req.params.id)
-    if (index === -1) return res.status(404).json({ error: 'Product not found' })
-
-    const updated = { ...inMemoryProducts[index], ...req.body, _id: req.params.id }
-    inMemoryProducts[index] = updated
-    return res.json(updated)
-  }
-
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    res.json(updated)
-  } catch (err) {
-    enableInMemoryProducts(err)
-    const index = inMemoryProducts.findIndex((product) => product._id === req.params.id)
-    if (index === -1) return res.status(404).json({ error: 'Product not found' })
-
-    const updated = { ...inMemoryProducts[index], ...req.body, _id: req.params.id }
-    inMemoryProducts[index] = updated
-    res.json(updated)
+    const { product, previous } = await updateProduct(req.params.id, req.body)
+    // The dress got a new picture: remove the old one from Cloudinary.
+    if (previous.image && previous.image !== product.image) destroyProductImage(previous.image)
+    res.json(product)
+  } catch (error) {
+    sendProductError(res, error, 'A módosítás mentése nem sikerült')
   }
 })
 
@@ -698,33 +692,27 @@ function destroyProductImage(imageUrl) {
 }
 
 app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
-  if (useInMemoryProducts) {
-    const product = inMemoryProducts.find((p) => p._id === req.params.id)
-    if (!product) return res.status(404).json({ error: 'Product not found' })
-
-    destroyProductImage(product.image)
-
-    inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
-    return res.status(204).end()
-  }
-
   try {
-    const product = await Product.findByIdAndDelete(req.params.id).lean()
-    if (!product) return res.status(404).json({ error: 'Product not found' })
-
-    destroyProductImage(product.image)
-
+    const removed = await deleteProduct(req.params.id)
+    destroyProductImage(removed.image)
     res.status(204).end()
-  } catch (err) {
-    enableInMemoryProducts(err)
-    const product = inMemoryProducts.find((p) => p._id === req.params.id)
-    if (!product) return res.status(404).json({ error: 'Product not found' })
-
-    destroyProductImage(product.image)
-
-    inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
-    res.status(204).end()
+  } catch (error) {
+    sendProductError(res, error, 'A törlés nem sikerült')
   }
+})
+
+// Removes a just-uploaded image that ended up unused (e.g. the form was
+// cancelled or saving failed). Only touches images no dress refers to.
+app.delete('/api/upload', requireAdminAuth, async (req, res) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url : ''
+  if (!url.includes('/extremeruha/')) return res.status(204).end()
+  try {
+    const products = await listProducts({ includeHidden: true })
+    if (!products.some((product) => product.image === url)) destroyProductImage(url)
+  } catch {
+    // Not critical: worst case an unused image stays in Cloudinary.
+  }
+  res.status(204).end()
 })
 
 // Upload endpoint — streams to Cloudinary, returns secure URL.
@@ -736,7 +724,7 @@ const upload = multer({
     if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
       cb(null, true)
     } else {
-      cb(new Error('Only image files are allowed (jpeg, png, webp, gif)'))
+      cb(new Error('Csak képfájl tölthető fel (JPG, PNG, WEBP vagy GIF).'))
     }
   },
 })
@@ -744,11 +732,11 @@ const upload = multer({
 app.post('/api/upload', requireAdminAuth, (req, res) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
-      const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400
-      return res.status(status).json({ error: err.message })
+      const tooBig = err.code === 'LIMIT_FILE_SIZE'
+      return res.status(tooBig ? 413 : 400).json({ error: tooBig ? 'A kép legfeljebb 5 MB lehet.' : err.message })
     }
 
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
+    if (!req.file) return res.status(400).json({ error: 'Nem érkezett fájl.' })
 
     const cloudinaryConfig = getCloudinaryConfig()
     if (!cloudinaryConfig) {
@@ -767,7 +755,7 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
       (error, result) => {
         if (error) {
           console.error('Cloudinary upload error', error)
-          return res.status(502).json({ error: 'Image upload failed' })
+          return res.status(502).json({ error: 'A kép feltöltése nem sikerült. Próbáld újra.' })
         }
         res.json({ url: result.secure_url })
       }

@@ -3,6 +3,7 @@ import { clearAdminToken, getAdminToken, setAdminToken } from './auth'
 import { CloudinarySettings, GoogleCalendarSettings } from './IntegrationSettings'
 import ReservationTypesSettings from './ReservationTypesSettings'
 import BookingScheduleSettings from './BookingScheduleSettings'
+import ProductsManager from './ProductsManager'
 
 type AdminTab = 'products' | 'reservations' | 'cloudinary' | 'google'
 
@@ -28,23 +29,11 @@ function readInitialAdminState() {
   return { tab, googleNotice }
 }
 
-type Product = {
-  _id?: string
-  name: string
-  style: string
-  image: string
-}
-
 export default function Admin() {
-  const [items, setItems] = useState<Product[]>([])
-  const [loading, setLoading] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
   const [token, setToken] = useState(() => getAdminToken())
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
-  const [form, setForm] = useState<Product>({ name: '', style: '', image: '' })
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [initialState] = useState(readInitialAdminState)
   const [tab, setTab] = useState<AdminTab>(initialState.tab)
 
@@ -53,40 +42,10 @@ export default function Admin() {
     if (window.location.search) window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
-  useEffect(() => {
-    if (!token) {
-      setItems([])
-      return
-    }
-
-    fetch('/api/products')
-      .then((r) => {
-        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
-        return r.json()
-      })
-      .then(setItems)
-      .catch((err) => {
-        console.error('Failed to load products', err)
-        setItems([])
-      })
-  }, [token])
-
   function handleLogout(message?: string) {
     clearAdminToken()
     setToken('')
-    setItems([])
     if (message) setAuthError(message)
-  }
-
-  async function readErrorMessage(res: Response, fallback: string) {
-    try {
-      const payload = await res.json()
-      if (payload?.error) return payload.error
-    } catch (error) {
-      // Ignore JSON parse failures and keep fallback.
-    }
-
-    return fallback
   }
 
   const adminFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -137,83 +96,12 @@ export default function Admin() {
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target as HTMLInputElement
-    setForm((s) => ({ ...s, [name]: value }))
-  }
-
-  async function uploadFile(): Promise<string | null> {
-    if (!file) return null
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await adminFetch('/api/upload', { method: 'POST', body: fd })
-    if (!res.ok) {
-      const message = await readErrorMessage(res, 'A feltöltés nem sikerült')
-      throw new Error(message)
-    }
-    const json = await res.json()
-    return json.url
-  }
-
-  async function createProduct(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      let image = form.image
-      if (file) {
-        const url = await uploadFile()
-        if (url) image = url
-      }
-
-      if (!image.trim()) {
-        throw new Error('A kép megadása kötelező')
-      }
-
-      const payload = {
-        name: form.name.trim(),
-        style: form.style.trim(),
-        image: image.trim(),
-      }
-
-      const res = await adminFetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      if (!res.ok) {
-        const message = await readErrorMessage(res, `A létrehozás nem sikerült: ${res.status} ${res.statusText}`)
-        throw new Error(message)
-      }
-      const data = await res.json()
-      setItems((it) => [data, ...it])
-      setForm({ name: '', style: '', image: '' })
-      setFile(null)
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-        setPreviewUrl(null)
-      }
-    } catch (err) {
-      console.error(err)
-      alert(err instanceof Error ? err.message : 'A termék létrehozása nem sikerült')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function remove(id?: string) {
-    if (!id) return
-    const res = await adminFetch(`/api/products/${id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const message = await readErrorMessage(res, 'A törlés nem sikerült')
-      alert(message)
-      return
-    }
-
-    setItems((it) => it.filter((p) => p._id !== id))
-  }
-
   if (!token) {
     return (
       <div className="min-h-screen bg-ivory font-jost">
         <div className="mx-auto max-w-md px-6 py-16">
           <h1 className="text-3xl font-cormorant text-rose-deep mb-3">Admin bejelentkezés</h1>
-          <p className="text-sm text-gray-600 mb-6">Jelentkezz be a termékkatalógus kezeléséhez.</p>
+          <p className="text-sm text-gray-600 mb-6">Jelentkezz be a weboldal kezeléséhez.</p>
           <form onSubmit={handleLogin} className="space-y-3 bg-white p-4 border rounded">
             <input
               name="username"
@@ -246,7 +134,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-ivory font-jost">
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <h1 className="text-3xl font-cormorant text-rose-deep">Admin</h1>
           <button className="text-sm border rounded px-3 py-1 bg-white" onClick={() => handleLogout()}>
@@ -273,44 +161,10 @@ export default function Admin() {
         ) : null}
         {tab === 'cloudinary' ? <CloudinarySettings adminFetch={adminFetch} /> : null}
         {tab === 'google' ? <GoogleCalendarSettings adminFetch={adminFetch} initialNotice={initialState.googleNotice} /> : null}
-        {tab === 'products' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="space-y-3">
-              {items.map((it) => (
-                <div key={it._id} className="p-3 bg-white border rounded flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold">{it.name}</div>
-                    <div className="text-sm text-gray-500">{it.style}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="text-sm text-red-600" onClick={() => remove(it._id)}>Törlés</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <aside>
-            <form onSubmit={createProduct} className="space-y-3 bg-white p-4 border rounded">
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Név" className="w-full border p-2" required />
-              <input name="style" value={form.style} onChange={handleChange} placeholder="Stílus" className="w-full border p-2" required />
-              <div>
-                <label className="block text-sm mb-1">Kép</label>
-                <input type="file" accept="image/*" onChange={(e) => {
-                  const f = e.target.files ? e.target.files[0] : null
-                  setFile(f)
-                  if (previewUrl) URL.revokeObjectURL(previewUrl)
-                  setPreviewUrl(f ? URL.createObjectURL(f) : null)
-                }} className="w-full" />
-                {previewUrl && <img src={previewUrl} alt="Előnézet" className="mt-2 max-h-40 w-full rounded object-contain" />}
-                <div className="text-xs text-gray-500 mt-1">Vagy hagyd üresen, és használd az alatti kép URL mezőt</div>
-              </div>
-              <input name="image" value={form.image} onChange={handleChange} placeholder="Vagy illeszd be a kép URL-t" className="w-full border p-2" />
-              <button type="submit" disabled={loading} className="w-full bg-rose-deep text-white py-2 rounded">{loading ? 'Mentés…' : 'Létrehozás'}</button>
-            </form>
-          </aside>
+        {/* Kept mounted so a half-edited dress survives switching tabs. */}
+        <div hidden={tab !== 'products'}>
+          <ProductsManager adminFetch={adminFetch} />
         </div>
-        ) : null}
       </div>
     </div>
   )
