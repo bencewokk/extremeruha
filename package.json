@@ -10,7 +10,8 @@
     "dev:server": "node server/index.js",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "admin:password": "node server/set-admin-password.js"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

@@ -10,17 +10,14 @@ import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { v2 as cloudinary } from 'cloudinary'
+import { loadSettings, getStoredSettings, updateSettingsSection, clearSettingsSection } from './settingsStore.js'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
-
 const app = express()
+// Needed so req.protocol is https behind a hosting proxy (Google OAuth redirect URI)
+app.set('trust proxy', true)
 app.use(cors())
 app.use(express.json())
 
@@ -153,17 +150,63 @@ function buildFallbackCalendarUrl({ reservationType, name, email, phone, notes, 
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-function getCalendarClient() {
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
+// ---- Integration config: values saved in /admin win over server/.env ----
+// Each section is taken as a whole from one source, so admin-saved keys are
+// never mixed with keys from .env.
 
-  if (!clientId || !clientSecret || !refreshToken) {
-    return null
+function getCloudinaryConfig() {
+  const stored = getStoredSettings().cloudinary || {}
+  if (stored.cloudName && stored.apiKey && stored.apiSecret) {
+    return { cloud_name: stored.cloudName, api_key: stored.apiKey, api_secret: stored.apiSecret, source: 'admin' }
   }
 
-  const auth = new google.auth.OAuth2(clientId, clientSecret)
-  auth.setCredentials({ refresh_token: refreshToken })
+  const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
+    return { cloud_name: CLOUDINARY_CLOUD_NAME, api_key: CLOUDINARY_API_KEY, api_secret: CLOUDINARY_API_SECRET, source: 'env' }
+  }
+
+  return null
+}
+
+function cloudinaryCallOptions(config) {
+  return { cloud_name: config.cloud_name, api_key: config.api_key, api_secret: config.api_secret }
+}
+
+function getGoogleCalendarConfig() {
+  const stored = getStoredSettings().google || {}
+  const timeZone = stored.timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
+
+  if (stored.clientId && stored.clientSecret && stored.refreshToken) {
+    return {
+      clientId: stored.clientId,
+      clientSecret: stored.clientSecret,
+      refreshToken: stored.refreshToken,
+      calendarId: stored.calendarId || 'primary',
+      timeZone,
+      source: 'admin',
+    }
+  }
+
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, GOOGLE_CALENDAR_ID } = process.env
+  if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN && GOOGLE_CALENDAR_ID) {
+    return {
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      refreshToken: GOOGLE_REFRESH_TOKEN,
+      calendarId: GOOGLE_CALENDAR_ID,
+      timeZone,
+      source: 'env',
+    }
+  }
+
+  return null
+}
+
+function getCalendarClient(config = getGoogleCalendarConfig()) {
+  if (!config) return null
+
+  const auth = new google.auth.OAuth2(config.clientId, config.clientSecret)
+  auth.setCredentials({ refresh_token: config.refreshToken })
   return google.calendar({ version: 'v3', auth })
 }
 
@@ -334,6 +377,7 @@ mongoose.set('bufferCommands', false)
 mongoose.connect(MONGO, { serverSelectionTimeoutMS: 5000 })
   .then(() => enableMongoProducts())
   .catch((err) => enableInMemoryProducts(err))
+  .finally(() => loadSettings().catch((error) => console.error('Could not load admin settings', error)))
 
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {}
@@ -424,9 +468,10 @@ app.get('/api/bookings/availability', async (req, res) => {
     return res.status(400).json({ error: 'Ervenytelen reservationType ertek' })
   }
 
-  const calendar = getCalendarClient()
-  const calendarId = process.env.GOOGLE_CALENDAR_ID
-  const normalizedTimeZone = timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
+  const calendarConfig = getGoogleCalendarConfig()
+  const calendar = getCalendarClient(calendarConfig)
+  const calendarId = calendarConfig?.calendarId
+  const normalizedTimeZone = timeZone || calendarConfig?.timeZone || 'Europe/Budapest'
 
   if (!calendar || !calendarId) {
     return res.status(503).json({ error: 'A Google Naptar nincs beallitva a szerveren' })
@@ -488,9 +533,10 @@ app.post('/api/bookings', async (req, res) => {
     end,
   })
 
-  const calendar = getCalendarClient()
-  const calendarId = process.env.GOOGLE_CALENDAR_ID
-  const normalizedTimeZone = timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest'
+  const calendarConfig = getGoogleCalendarConfig()
+  const calendar = getCalendarClient(calendarConfig)
+  const calendarId = calendarConfig?.calendarId
+  const normalizedTimeZone = timeZone || calendarConfig?.timeZone || 'Europe/Budapest'
 
   if (!calendar || !calendarId) {
     return res.status(503).json({
@@ -585,13 +631,23 @@ function getCloudinaryPublicId(imageUrl) {
   return match ? match[1] : null
 }
 
+// Deletes the product image from Cloudinary, but only if it lives in the
+// currently configured cloud (images from a previous account are left alone).
+function destroyProductImage(imageUrl) {
+  const config = getCloudinaryConfig()
+  const publicId = getCloudinaryPublicId(imageUrl)
+  if (!config || !publicId) return
+  if (!imageUrl.includes(`res.cloudinary.com/${config.cloud_name}/`)) return
+
+  cloudinary.uploader.destroy(publicId, cloudinaryCallOptions(config)).catch(() => {})
+}
+
 app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
   if (useInMemoryProducts) {
     const product = inMemoryProducts.find((p) => p._id === req.params.id)
     if (!product) return res.status(404).json({ error: 'Product not found' })
 
-    const publicId = getCloudinaryPublicId(product.image)
-    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+    destroyProductImage(product.image)
 
     inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
     return res.status(204).end()
@@ -601,8 +657,7 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
     const product = await Product.findByIdAndDelete(req.params.id).lean()
     if (!product) return res.status(404).json({ error: 'Product not found' })
 
-    const publicId = getCloudinaryPublicId(product.image)
-    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+    destroyProductImage(product.image)
 
     res.status(204).end()
   } catch (err) {
@@ -610,8 +665,7 @@ app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
     const product = inMemoryProducts.find((p) => p._id === req.params.id)
     if (!product) return res.status(404).json({ error: 'Product not found' })
 
-    const publicId = getCloudinaryPublicId(product.image)
-    if (publicId) cloudinary.uploader.destroy(publicId).catch(() => {})
+    destroyProductImage(product.image)
 
     inMemoryProducts = inMemoryProducts.filter((p) => p._id !== req.params.id)
     res.status(204).end()
@@ -641,12 +695,14 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' })
 
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      return res.status(503).json({ error: 'Image storage is not configured on the server' })
+    const cloudinaryConfig = getCloudinaryConfig()
+    if (!cloudinaryConfig) {
+      return res.status(503).json({ error: 'A képtárhely (Cloudinary) nincs beállítva. Admin → Képtárhely.' })
     }
 
     const uploadStream = cloudinary.uploader.upload_stream(
       {
+        ...cloudinaryCallOptions(cloudinaryConfig),
         folder: 'extremeruha',
         transformation: [
           { width: 1200, crop: 'limit' },
@@ -664,6 +720,243 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
 
     uploadStream.end(req.file.buffer)
   })
+})
+
+// ---- Admin: integration settings (Cloudinary + Google Calendar) ----
+
+const GOOGLE_OAUTH_SCOPES = [
+  'https://www.googleapis.com/auth/calendar',
+  'openid',
+  'email',
+]
+
+function getGoogleRedirectUri(req) {
+  const base = (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '')
+  return `${base}/api/admin/google/callback`
+}
+
+function maskValue(value) {
+  if (!value) return ''
+  if (value.length <= 6) return '••••'
+  return `${value.slice(0, 3)}••••${value.slice(-3)}`
+}
+
+function cleanString(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function describeGoogleError(error) {
+  const detail = error?.response?.data?.error_description
+    || error?.response?.data?.error?.message
+    || error?.response?.data?.error
+    || error?.message
+    || 'ismeretlen hiba'
+  return typeof detail === 'string' ? detail : JSON.stringify(detail)
+}
+
+function buildSettingsPayload(req) {
+  const stored = getStoredSettings()
+  const storedCloudinary = stored.cloudinary || {}
+  const storedGoogle = stored.google || {}
+  const activeCloudinary = getCloudinaryConfig()
+  const activeGoogle = getGoogleCalendarConfig()
+
+  return {
+    cloudinary: {
+      cloudName: storedCloudinary.cloudName || '',
+      apiKey: storedCloudinary.apiKey || '',
+      apiSecretMasked: maskValue(storedCloudinary.apiSecret),
+      hasApiSecret: Boolean(storedCloudinary.apiSecret),
+      updatedAt: storedCloudinary.updatedAt || null,
+      activeSource: activeCloudinary?.source || null,
+      activeCloudName: activeCloudinary?.cloud_name || null,
+    },
+    google: {
+      clientId: storedGoogle.clientId || '',
+      clientSecretMasked: maskValue(storedGoogle.clientSecret),
+      hasClientSecret: Boolean(storedGoogle.clientSecret),
+      connected: Boolean(storedGoogle.refreshToken),
+      connectedEmail: storedGoogle.connectedEmail || '',
+      connectedAt: storedGoogle.connectedAt || null,
+      calendarId: storedGoogle.calendarId || 'primary',
+      timeZone: storedGoogle.timeZone || process.env.GOOGLE_CALENDAR_TIMEZONE || 'Europe/Budapest',
+      updatedAt: storedGoogle.updatedAt || null,
+      redirectUri: getGoogleRedirectUri(req),
+      activeSource: activeGoogle?.source || null,
+    },
+  }
+}
+
+app.get('/api/admin/settings', requireAdminAuth, (req, res) => {
+  res.json(buildSettingsPayload(req))
+})
+
+app.put('/api/admin/settings/cloudinary', requireAdminAuth, async (req, res) => {
+  const cloudName = cleanString(req.body?.cloudName)
+  const apiKey = cleanString(req.body?.apiKey)
+  const apiSecret = cleanString(req.body?.apiSecret)
+  const existing = getStoredSettings().cloudinary || {}
+
+  if (!cloudName || !apiKey || (!apiSecret && !existing.apiSecret)) {
+    return res.status(400).json({ error: 'A Cloud name, API key és API secret mezők kötelezők.' })
+  }
+
+  // Check the keys before saving, so a typo never breaks image uploads.
+  const candidate = { cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret || existing.apiSecret }
+  try {
+    await cloudinary.api.ping(candidate)
+  } catch (error) {
+    const detail = error?.error?.message || error?.message || 'ismeretlen hiba'
+    return res.status(400).json({ error: `A Cloudinary nem fogadta el az adatokat: ${detail}` })
+  }
+
+  await updateSettingsSection('cloudinary', {
+    cloudName,
+    apiKey,
+    apiSecret: candidate.api_secret,
+  })
+
+  res.json(buildSettingsPayload(req))
+})
+
+app.delete('/api/admin/settings/cloudinary', requireAdminAuth, async (req, res) => {
+  await clearSettingsSection('cloudinary')
+  res.json(buildSettingsPayload(req))
+})
+
+app.post('/api/admin/settings/cloudinary/test', requireAdminAuth, async (req, res) => {
+  const config = getCloudinaryConfig()
+  if (!config) return res.status(400).json({ error: 'Nincs beállított Cloudinary fiók.' })
+
+  try {
+    await cloudinary.api.ping(cloudinaryCallOptions(config))
+    res.json({ ok: true, message: `Működik — a képek ide kerülnek: ${config.cloud_name}` })
+  } catch (error) {
+    const detail = error?.error?.message || error?.message || 'ismeretlen hiba'
+    res.status(502).json({ error: `A Cloudinary kapcsolat nem működik: ${detail}` })
+  }
+})
+
+app.put('/api/admin/settings/google', requireAdminAuth, async (req, res) => {
+  const clientId = cleanString(req.body?.clientId)
+  const clientSecret = cleanString(req.body?.clientSecret)
+  const calendarId = cleanString(req.body?.calendarId) || 'primary'
+  const timeZone = cleanString(req.body?.timeZone) || 'Europe/Budapest'
+  const existing = getStoredSettings().google || {}
+
+  if (!clientId || (!clientSecret && !existing.clientSecret)) {
+    return res.status(400).json({ error: 'A Client ID és Client secret mezők kötelezők.' })
+  }
+
+  const patch = { clientId, calendarId, timeZone }
+  if (clientSecret) patch.clientSecret = clientSecret
+
+  // A refresh token only works with the OAuth client that issued it.
+  const clientChanged = clientId !== existing.clientId || (clientSecret && clientSecret !== existing.clientSecret)
+  if (clientChanged) {
+    patch.refreshToken = ''
+    patch.connectedEmail = ''
+    patch.connectedAt = null
+  }
+
+  await updateSettingsSection('google', patch)
+  res.json(buildSettingsPayload(req))
+})
+
+app.delete('/api/admin/settings/google', requireAdminAuth, async (req, res) => {
+  await clearSettingsSection('google')
+  res.json(buildSettingsPayload(req))
+})
+
+// Step 1 of "Connect Google": returns the Google consent URL.
+app.post('/api/admin/settings/google/auth-url', requireAdminAuth, (req, res) => {
+  const stored = getStoredSettings().google || {}
+  if (!stored.clientId || !stored.clientSecret) {
+    return res.status(400).json({ error: 'Előbb mentsd el a Client ID-t és a Client secretet.' })
+  }
+
+  const state = jwt.sign({ purpose: 'google-oauth', sub: req.admin?.sub }, JWT_SECRET, { expiresIn: '15m' })
+  const oauth = new google.auth.OAuth2(stored.clientId, stored.clientSecret, getGoogleRedirectUri(req))
+  const url = oauth.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent', // always return a refresh token
+    scope: GOOGLE_OAUTH_SCOPES,
+    state,
+  })
+
+  res.json({ url })
+})
+
+// Step 2: Google redirects back here after the owner clicks "Allow".
+app.get('/api/admin/google/callback', async (req, res) => {
+  const { code, state, error } = req.query
+  const back = (status, message) => {
+    const params = new URLSearchParams({ tab: 'google', google: status })
+    if (message) params.set('message', String(message).slice(0, 300))
+    res.redirect(`/admin?${params.toString()}`)
+  }
+
+  if (error) return back('error', `A Google elutasította: ${error}`)
+
+  let statePayload = null
+  try {
+    statePayload = JWT_SECRET ? jwt.verify(String(state || ''), JWT_SECRET) : null
+  } catch {
+    statePayload = null
+  }
+  if (!statePayload || statePayload.purpose !== 'google-oauth') {
+    return back('error', 'Lejárt vagy érvénytelen kérés. Próbáld újra a Csatlakoztatás gombbal.')
+  }
+
+  const stored = getStoredSettings().google || {}
+  if (!stored.clientId || !stored.clientSecret || !code) {
+    return back('error', 'Hiányzó Client ID / Client secret.')
+  }
+
+  try {
+    const oauth = new google.auth.OAuth2(stored.clientId, stored.clientSecret, getGoogleRedirectUri(req))
+    const { tokens } = await oauth.getToken(String(code))
+
+    if (!tokens.refresh_token) {
+      return back('error', 'A Google nem adott refresh tokent. Vond vissza a hozzáférést a Google-fiókodban, majd próbáld újra.')
+    }
+
+    let connectedEmail = ''
+    if (tokens.id_token) {
+      try {
+        const payload = JSON.parse(Buffer.from(tokens.id_token.split('.')[1], 'base64url').toString('utf8'))
+        connectedEmail = payload.email || ''
+      } catch {
+        connectedEmail = ''
+      }
+    }
+
+    await updateSettingsSection('google', {
+      refreshToken: tokens.refresh_token,
+      connectedEmail,
+      connectedAt: new Date().toISOString(),
+    })
+
+    back('connected')
+  } catch (err) {
+    console.error('Google OAuth callback failed', err)
+    back('error', describeGoogleError(err))
+  }
+})
+
+app.post('/api/admin/settings/google/test', requireAdminAuth, async (req, res) => {
+  const config = getGoogleCalendarConfig()
+  const calendar = getCalendarClient(config)
+  if (!calendar) return res.status(400).json({ error: 'A Google Naptár még nincs csatlakoztatva.' })
+
+  try {
+    const { data } = await calendar.calendars.get({ calendarId: config.calendarId })
+    const now = new Date()
+    await getBusyRanges(calendar, config.calendarId, now.toISOString(), new Date(now.getTime() + 86400000).toISOString(), config.timeZone)
+    res.json({ ok: true, message: `Működik — a foglalások ebbe a naptárba kerülnek: ${data.summary || config.calendarId}` })
+  } catch (error) {
+    res.status(502).json({ error: `A naptár nem érhető el: ${describeGoogleError(error)}` })
+  }
 })
 
 if (fs.existsSync(distIndexPath)) {
