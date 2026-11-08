@@ -749,31 +749,8 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero */}
-      <header className="mx-auto max-w-6xl px-6 py-12">
-        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
-          <SectionEyebrow>Rólam</SectionEyebrow>
-          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Rólam</h1>
-          <p className="text-lg text-gray-600 mb-4">
-            13 éves korom óta szabok, varrok és tervezek. A szakma nagy részét dédimtől lestem el, tőle tanultam meg a mesterség alapjait és fortélyait. A munkám egyben a hobbim: hihetetlen energiával vetem bele magam minden új tervezésbe, hisz mások boldogsága tölt el örömmel.
-          </p>
-          <p className="text-lg text-gray-600 mb-6">
-            25 éve működő üzletünkben szeretettel várjuk vendégeinket és vásárlóinkat. Több éves tapasztalattal rendelkező szakértőink személyre szabott tanácsot adnak, hogy egyéniségednek megfelelő ruhát tervezzünk számodra. Ha már vannak kész terveid vagy rajzaid, megvalósítjuk álmaid ruháját — gyere el ruhapróbára, és légy a nagy napon igazi hercegnő!
-          </p>
-          <div className="mb-8 flex flex-wrap gap-3">
-            <MotifBadge>25 éve működő üzlet</MotifBadge>
-            <MotifBadge>Személyes tervezés</MotifBadge>
-            <MotifBadge>Privát ruhapróba</MotifBadge>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekció megnézése</a>
-            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Időpont foglalása</a>
-          </div>
-        </div>
-      </header>
-
       {/* Collection Grid */}
-      <section id="collection" className="pb-12">
+      <section id="collection" className="pt-12">
         <div className="mx-auto max-w-6xl px-6 mb-6">
           <SectionEyebrow>Válogatott darabok</SectionEyebrow>
           <h2 className="text-3xl font-cormorant text-rose-deep">A Kollekció</h2>
@@ -817,6 +794,29 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Hero */}
+      <header className="mx-auto max-w-6xl px-6 py-12">
+        <div className="motif-panel rounded-[32px] p-6 lg:p-8">
+          <SectionEyebrow>Rólam</SectionEyebrow>
+          <h1 className="text-5xl leading-tight font-cormorant text-rose-deep mb-4">Rólam</h1>
+          <p className="text-lg text-gray-600 mb-4">
+            13 éves korom óta szabok, varrok és tervezek. A szakma nagy részét dédimtől lestem el, tőle tanultam meg a mesterség alapjait és fortélyait. A munkám egyben a hobbim: hihetetlen energiával vetem bele magam minden új tervezésbe, hisz mások boldogsága tölt el örömmel.
+          </p>
+          <p className="text-lg text-gray-600 mb-6">
+            25 éve működő üzletünkben szeretettel várjuk vendégeinket és vásárlóinkat. Több éves tapasztalattal rendelkező szakértőink személyre szabott tanácsot adnak, hogy egyéniségednek megfelelő ruhát tervezzünk számodra. Ha már vannak kész terveid vagy rajzaid, megvalósítjuk álmaid ruháját — gyere el ruhapróbára, és légy a nagy napon igazi hercegnő!
+          </p>
+          <div className="mb-8 flex flex-wrap gap-3">
+            <MotifBadge>25 éve működő üzlet</MotifBadge>
+            <MotifBadge>Személyes tervezés</MotifBadge>
+            <MotifBadge>Privát ruhapróba</MotifBadge>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <a href="#collection" className="rounded-full border border-rose-deep px-6 py-3 text-rose-deep font-semibold">Kollekció megnézése</a>
+            <a href="#booking" className="rounded-full bg-rose-deep px-6 py-3 text-white font-semibold">Időpont foglalása</a>
+          </div>
+        </div>
+      </header>
 
       {/* Booking Banner */}
       <section id="booking" className="mx-auto max-w-6xl px-6 py-12">
