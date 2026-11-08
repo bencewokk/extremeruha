@@ -31,7 +31,9 @@ type GoogleReviewsPlace = {
   userRatingCount: number
 }
 
-type ReservationTypeId = 'ruhaproba' | 'kolcsonzesi-konzultacio' | 'vasarlasi-konzultacio'
+// Booking types come from /api/reservation-types (editable in /admin).
+// The built-in ones below are only a fallback while loading / if the API fails.
+type ReservationTypeId = string
 
 type ReservationTypeConfig = {
   id: ReservationTypeId
@@ -39,8 +41,8 @@ type ReservationTypeConfig = {
   durationMinutes: number
   heading: string
   description: string
-  badges: [string, string, string]
-  highlights: [string, string, string]
+  badges: string[]
+  highlights: string[]
   notesPlaceholder: string
 }
 
@@ -112,7 +114,7 @@ const BUSINESS_POSTAL_CODE = '3530'
 const BUSINESS_REGION = 'Borsod-Abauj-Zemplen'
 const DEFAULT_RESERVATION_TYPE: ReservationTypeId = 'ruhaproba'
 const SLOT_STEP_MINUTES = 15
-const RESERVATION_TYPES: Record<ReservationTypeId, ReservationTypeConfig> = {
+const FALLBACK_RESERVATION_TYPES: Record<string, ReservationTypeConfig> = {
   ruhaproba: {
     id: 'ruhaproba',
     label: 'Ruhapróba',
@@ -156,11 +158,16 @@ const RESERVATION_TYPES: Record<ReservationTypeId, ReservationTypeConfig> = {
     notesPlaceholder: 'Megjegyzés (kedvelt stílus, méret, fontos szempontok)',
   },
 }
-const RESERVATION_TYPE_ORDER: ReservationTypeId[] = [
+const FALLBACK_RESERVATION_TYPE_LIST: ReservationTypeConfig[] = [
   'ruhaproba',
   'kolcsonzesi-konzultacio',
   'vasarlasi-konzultacio',
-]
+].map((id) => FALLBACK_RESERVATION_TYPES[id])
+
+function isReservationTypeConfig(value: unknown): value is ReservationTypeConfig {
+  const type = value as ReservationTypeConfig
+  return Boolean(type && typeof type.id === 'string' && typeof type.label === 'string' && typeof type.durationMinutes === 'number')
+}
 
 function formatDurationMinutes(durationMinutes: number) {
   return `${durationMinutes} perces`
@@ -321,7 +328,34 @@ export default function Home() {
   const [loadingReviews, setLoadingReviews] = useState(true)
   const [reviewsError, setReviewsError] = useState('')
   const [reviewsStale, setReviewsStale] = useState(false)
-  const selectedReservationType = RESERVATION_TYPES[form.reservationType] || RESERVATION_TYPES[DEFAULT_RESERVATION_TYPE]
+  const [reservationTypes, setReservationTypes] = useState<ReservationTypeConfig[]>(FALLBACK_RESERVATION_TYPE_LIST)
+  const selectedReservationType = reservationTypes.find((type) => type.id === form.reservationType) || reservationTypes[0]
+
+  useEffect(() => {
+    let isActive = true
+
+    fetch('/api/reservation-types')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((payload) => {
+        const types = Array.isArray(payload?.types) ? payload.types.filter(isReservationTypeConfig) : []
+        if (!isActive || types.length === 0) return
+
+        const normalized = types.map((type: ReservationTypeConfig) => ({
+          ...type,
+          badges: Array.isArray(type.badges) ? type.badges : [],
+          highlights: Array.isArray(type.highlights) ? type.highlights : [],
+        }))
+        setReservationTypes(normalized)
+        setForm((current) => (
+          normalized.some((type: ReservationTypeConfig) => type.id === current.reservationType)
+            ? current
+            : { ...current, reservationType: normalized[0].id, startDateTime: '' }
+        ))
+      })
+      .catch((error) => console.error('Failed to load reservation types, using defaults', error))
+
+    return () => { isActive = false }
+  }, [])
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -659,7 +693,7 @@ export default function Home() {
           startIso: start.toISOString(),
           notes: form.notes,
           timeZone: clientTimeZone,
-          reservationType: form.reservationType,
+          reservationType: selectedReservationType.id,
         }),
       })
 
@@ -796,34 +830,28 @@ export default function Home() {
                 <MotifBadge key={badge}>{badge}</MotifBadge>
               ))}
             </div>
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
-                <div className="mb-2 flex items-center gap-2 text-rose-deep">
-                  <IconShell><ClockIcon /></IconShell>
-                </div>
-                {selectedReservationType.highlights[0]}
+            {selectedReservationType.highlights.length > 0 ? (
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {selectedReservationType.highlights.map((highlight, index) => {
+                  const Icon = [ClockIcon, CalendarIcon, StarIcon][index % 3]
+                  return (
+                    <div key={`${index}-${highlight}`} className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
+                      <div className="mb-2 flex items-center gap-2 text-rose-deep">
+                        <IconShell><Icon /></IconShell>
+                      </div>
+                      {highlight}
+                    </div>
+                  )
+                })}
               </div>
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
-                <div className="mb-2 flex items-center gap-2 text-rose-deep">
-                  <IconShell><CalendarIcon /></IconShell>
-                </div>
-                {selectedReservationType.highlights[1]}
-              </div>
-              <div className="rounded-2xl border border-rose-deep/10 bg-white/70 px-4 py-3 text-sm text-gray-600">
-                <div className="mb-2 flex items-center gap-2 text-rose-deep">
-                  <IconShell><StarIcon /></IconShell>
-                </div>
-                {selectedReservationType.highlights[2]}
-              </div>
-            </div>
+            ) : null}
           </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="block text-sm text-gray-700 mb-2">Foglalás típusa</label>
               <div className="flex flex-wrap gap-2">
-                {RESERVATION_TYPE_ORDER.map((reservationTypeId) => {
-                  const reservationType = RESERVATION_TYPES[reservationTypeId]
-                  const active = form.reservationType === reservationTypeId
+                {reservationTypes.map((reservationType) => {
+                  const active = selectedReservationType.id === reservationType.id
 
                   return (
                     <button

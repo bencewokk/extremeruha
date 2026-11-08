@@ -5,12 +5,13 @@ import dotenv from 'dotenv'
 import Product from './models/Product.js'
 import path from 'path'
 import multer from 'multer'
-import { randomUUID } from 'crypto'
+import { randomUUID, createHash } from 'crypto'
 import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { v2 as cloudinary } from 'cloudinary'
 import { loadSettings, getStoredSettings, updateSettingsSection, clearSettingsSection } from './settingsStore.js'
+import { DEFAULT_RESERVATION_TYPES, SLOT_STEP_MINUTES, sanitizeReservationTypes, withDerivedDefaults } from './reservationTypes.js'
 
 // Load server/.env specifically so running from project root works
 dotenv.config({ path: path.join(process.cwd(), 'server', '.env') })
@@ -47,31 +48,6 @@ function formatGoogleDate(value) {
   return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 }
 
-const SLOT_STEP_MINUTES = 15
-const DEFAULT_RESERVATION_TYPE = 'ruhaproba'
-const RESERVATION_TYPES = {
-  ruhaproba: {
-    id: 'ruhaproba',
-    label: 'Ruhapróba',
-    durationMinutes: 90,
-    eventTitle: 'Menyasszonyi ruhaproba',
-    durationLabel: 'Idotartam: 90 perc',
-  },
-  'kolcsonzesi-konzultacio': {
-    id: 'kolcsonzesi-konzultacio',
-    label: 'Kölcsönzési konzultáció',
-    durationMinutes: 60,
-    eventTitle: 'Menyasszonyi ruhakolcsonzesi konzultacio',
-    durationLabel: 'Idotartam: 60 perc',
-  },
-  'vasarlasi-konzultacio': {
-    id: 'vasarlasi-konzultacio',
-    label: 'Vásárlási konzultáció',
-    durationMinutes: 60,
-    eventTitle: 'Menyasszonyi ruhavasarlasi konzultacio',
-    durationLabel: 'Idotartam: 60 perc',
-  },
-}
 const GOOGLE_REVIEWS_CACHE_TTL_MS = 30 * 60 * 1000
 let googleReviewsCache = { data: null, expiresAt: 0 }
 
@@ -113,13 +89,38 @@ function buildAvailableStarts({ windowStart, windowEnd, busyRanges, stepMinutes,
   return available
 }
 
-function getReservationType(typeId) {
-  return RESERVATION_TYPES[typeId] || null
+// Booking types exactly as saved in /admin (incl. switched-off ones).
+function getRawReservationTypes() {
+  const stored = getStoredSettings().reservationTypes?.types
+  return Array.isArray(stored) && stored.length ? stored : DEFAULT_RESERVATION_TYPES
+}
+
+function getAllReservationTypes() {
+  return getRawReservationTypes().map((type) => ({
+    ...withDerivedDefaults(type),
+    durationLabel: `Idotartam: ${type.durationMinutes} perc`,
+  }))
+}
+
+function getEnabledReservationTypes() {
+  return getAllReservationTypes().filter((type) => type.enabled !== false)
 }
 
 function resolveReservationType(typeId) {
-  if (!typeId) return RESERVATION_TYPES[DEFAULT_RESERVATION_TYPE]
-  return getReservationType(typeId)
+  const enabled = getEnabledReservationTypes()
+  if (!typeId) return enabled[0] || null
+  return enabled.find((type) => type.id === typeId) || null
+}
+
+function toPublicReservationType(type) {
+  const { enabled, durationLabel, eventTitle, ...publicFields } = type
+  return publicFields
+}
+
+// Google Calendar event ids may only use a-v and 0-9. A hash of type + start
+// keeps double-submits of the same slot from creating two events.
+function buildCalendarEventId(typeId, start) {
+  return `bk${createHash('sha1').update(`${typeId}|${start.getTime()}`).digest('hex')}`
 }
 
 function buildReservationTypePayload(type) {
@@ -465,7 +466,7 @@ app.get('/api/bookings/availability', async (req, res) => {
   }
 
   if (!reservationType) {
-    return res.status(400).json({ error: 'Ervenytelen reservationType ertek' })
+    return res.status(400).json({ error: 'Ez a foglalástípus jelenleg nem elérhető. Kérlek válassz másikat.' })
   }
 
   const calendarConfig = getGoogleCalendarConfig()
@@ -510,7 +511,7 @@ app.post('/api/bookings', async (req, res) => {
   }
 
   if (!reservationType) {
-    return res.status(400).json({ error: 'Ervenytelen reservationType ertek' })
+    return res.status(400).json({ error: 'Ez a foglalástípus jelenleg nem elérhető. Kérlek válassz másikat.' })
   }
 
   const start = new Date(startIso)
@@ -554,7 +555,7 @@ app.post('/api/bookings', async (req, res) => {
 
     const event = await calendar.events.insert({
       calendarId,
-      eventId: `${reservationType.id}-${start.getTime()}`,
+      eventId: buildCalendarEventId(reservationType.id, start),
       requestBody: {
         summary: reservationType.eventTitle,
         location: 'Extreme Ruhaszalon, Munkacsy utca, 3530 Miskolc, Hungary',
@@ -594,7 +595,7 @@ app.post('/api/bookings', async (req, res) => {
 
     console.error('Google Calendar booking failed', error)
     res.status(502).json({
-      error: 'Could not create Google Calendar event',
+      error: 'Nem sikerült létrehozni a foglalást a Google Naptárban',
       fallbackUrl,
     })
   }
@@ -720,6 +721,37 @@ app.post('/api/upload', requireAdminAuth, (req, res) => {
 
     uploadStream.end(req.file.buffer)
   })
+})
+
+// ---- Booking types ----
+
+app.get('/api/reservation-types', (req, res) => {
+  res.set('Cache-Control', 'no-cache')
+  res.json({
+    stepMinutes: SLOT_STEP_MINUTES,
+    types: getEnabledReservationTypes().map(toPublicReservationType),
+  })
+})
+
+app.get('/api/admin/reservation-types', requireAdminAuth, (req, res) => {
+  res.json({
+    stepMinutes: SLOT_STEP_MINUTES,
+    isDefault: !getStoredSettings().reservationTypes?.types?.length,
+    types: getRawReservationTypes(),
+  })
+})
+
+app.put('/api/admin/reservation-types', requireAdminAuth, async (req, res) => {
+  const result = sanitizeReservationTypes(req.body?.types)
+  if (result.error) return res.status(400).json({ error: result.error })
+
+  await updateSettingsSection('reservationTypes', { types: result.types })
+  res.json({ stepMinutes: SLOT_STEP_MINUTES, isDefault: false, types: result.types })
+})
+
+app.delete('/api/admin/reservation-types', requireAdminAuth, async (req, res) => {
+  await clearSettingsSection('reservationTypes')
+  res.json({ stepMinutes: SLOT_STEP_MINUTES, isDefault: true, types: DEFAULT_RESERVATION_TYPES })
 })
 
 // ---- Admin: integration settings (Cloudinary + Google Calendar) ----

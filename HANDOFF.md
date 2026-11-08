@@ -37,6 +37,14 @@ on-page guide covers every Google Console click, including putting the app
 **In production** (in "Testing" mode Google expires the connection after 7
 days).
 
+## 3. Booking types: `/admin` → **Foglalástípusok**
+
+He can add, rename, reorder, switch off or delete the kinds of appointment
+people can book (Ruhapróba, consultations, ...), and set each one's length and
+the texts shown on the homepage, in the calendar event and on the thank-you
+page. The first enabled type is the default. Until he saves, the original 3
+types are used. Renaming keeps a type's internal id, so old links keep working.
+
 ## How it works
 
 - Settings are stored in MongoDB (`settings` collection), or in
@@ -50,7 +58,7 @@ days).
   in the currently configured cloud. Old images in the previous account are
   left alone.
 
-## 3. After he's switched over
+## 4. After he's switched over
 
 Revoke your old access: delete your Google OAuth client / revoke the token,
 rotate your Cloudinary API secret, and remove the old values from `server/.env`.
